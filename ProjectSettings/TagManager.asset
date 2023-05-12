@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - Bullet
+  - 1XP Orb
+  - 5XP Orb
+  - 10XP Orb
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - Object
+  - Water
+  - UI
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Tilemap Ground
+    uniqueID: 53966059
+    locked: 0
+  - name: Tilemap Shadows
+    uniqueID: 1470227209
+    locked: 0
+  - name: Emote Circle
+    uniqueID: 554845331
+    locked: 0
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Player
+    uniqueID: 2922007633
+    locked: 0
+  - name: Tilemap Objects
+    uniqueID: 1674834063
+    locked: 0
+  - name: UI
+    uniqueID: 4185165761
+    locked: 0
