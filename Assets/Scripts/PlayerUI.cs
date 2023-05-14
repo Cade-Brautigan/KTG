@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
-using Photon.Pun;
 
 public class PlayerUI : MonoBehaviour
 {

@@ -6,6 +6,9 @@ using TMPro;
 
 public class MainMenu : MonoBehaviour
 {
+    // Networking
+    HostScript hostScript;
+
     // Main Menu
     GameObject mainMenu;
     Button playButton;
@@ -23,6 +26,9 @@ public class MainMenu : MonoBehaviour
 
     private void Awake() 
     {
+        // Networking
+        hostScript = transform.Find("Networking").GetComponent<HostScript>();
+
         // Main Menu
         mainMenu = transform.Find("MainMenu").gameObject;
         playButton = mainMenu.transform.Find("PlayButton").GetComponent<Button>();
@@ -58,6 +64,12 @@ public class MainMenu : MonoBehaviour
     public void PlayButtonPressed()
     {
         Debug.Log("Play button pressed");
+    }
+
+    public void HostButtonPressed()
+    {
+        Debug.Log("Host button pressed");
+        hostScript.HostGame();
     }
 
 

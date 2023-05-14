@@ -1,9 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using Photon.Pun;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviourPunCallbacks
+public class PlayerMovement : MonoBehaviour
 {
 
     Joystick movementJoystick;
@@ -21,9 +20,6 @@ public class PlayerMovement : MonoBehaviourPunCallbacks
     Transform firepoint;
     float firepointRadius = 1f;
 
-    bool isLocalPlayer;
-
-
     public float MoveSpeed {
         get { return moveSpeed; }
         set { moveSpeed = 5f - (0.25f * (value - 1)); }
@@ -37,7 +33,6 @@ public class PlayerMovement : MonoBehaviourPunCallbacks
         leveling = transform.GetComponent<PlayerLeveling>();
         map = GameObject.Find("Map");
         firepoint = transform.Find("Firepoint").GetComponent<Transform>();
-        isLocalPlayer = photonView.IsMine;
 
         MoveSpeed = leveling.Level;
         UpdateScale();
@@ -45,8 +40,6 @@ public class PlayerMovement : MonoBehaviourPunCallbacks
     }
 
     void Update() {
-        if (!isLocalPlayer) { return; }
-        
         if (movementJoystick != null) {
             movement.x = movementJoystick.Horizontal;
             movement.y = movementJoystick.Vertical;
@@ -60,8 +53,6 @@ public class PlayerMovement : MonoBehaviourPunCallbacks
     }
 
     void FixedUpdate() {
-        if (!isLocalPlayer) { return; }
-
         // Move
         playerBody.MovePosition(playerBody.position + movement * moveSpeed * Time.fixedDeltaTime);
         // Rotate

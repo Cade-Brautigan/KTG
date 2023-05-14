@@ -2680,7 +2680,7 @@ GameObject:
   - component: {fileID: 1211271653}
   - component: {fileID: 1211271652}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: Networking
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2745,11 +2745,16 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1211271652}
-    PlayerPrefab: {fileID: 0}
-    NetworkPrefabs: []
+    PlayerPrefab: {fileID: 6282399234608731584, guid: 7cc3f689ad1ff1b46af782d97a8214bb, type: 3}
+    NetworkPrefabs:
+    - Override: 0
+      Prefab: {fileID: 6282399234608731584, guid: 7cc3f689ad1ff1b46af782d97a8214bb, type: 3}
+      SourcePrefabToOverride: {fileID: 0}
+      SourceHashToOverride: 0
+      OverridingTargetPrefab: {fileID: 0}
     TickRate: 30
     ClientConnectionBufferTimeout: 10
-    ConnectionApproval: 0
+    ConnectionApproval: 1
     ConnectionData: 
     EnableTimeResync: 0
     TimeResyncInterval: 30

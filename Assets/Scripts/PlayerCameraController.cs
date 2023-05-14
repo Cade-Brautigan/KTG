@@ -1,10 +1,10 @@
 using UnityEngine;
-using Photon.Pun;
 using Cinemachine;
+
 
 public class PlayerCameraController : MonoBehaviour
 {
-    
+    /*
     private CinemachineVirtualCamera vcam;
     private PhotonView photonView;
 
@@ -25,5 +25,7 @@ public class PlayerCameraController : MonoBehaviour
             vcam.transform.position = transform.position;
         }
     }
+    */
 
 }
+
