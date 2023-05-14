@@ -12,13 +12,13 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     string gameVersion = "1";
     byte maxPlayersPerRoom = 10;
 
-    private void Awake() 
+    private void Awake()
     {
         DontDestroyOnLoad(this.gameObject);
         PhotonNetwork.AutomaticallySyncScene = true;
         PhotonNetwork.GameVersion = gameVersion;
         PhotonNetwork.SendRate = 60; // Set the send rate to 60 updates per second
-        PhotonNetwork.SerializationRate = 60; // Set the serialization rate to 30 updates per second
+        PhotonNetwork.SerializationRate = 60; // Set the serialization rate to 60 updates per second
         PhotonNetwork.ConnectUsingSettings();
         SceneManager.sceneLoaded += OnSceneLoaded;
     }

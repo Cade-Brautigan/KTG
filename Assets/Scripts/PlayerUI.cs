@@ -53,7 +53,7 @@ public class PlayerUI : MonoBehaviour
     }
 
     public void UpdateNameText() {
-        nameUI.text = PhotonNetwork.NickName;
+        nameUI.text = playerName;
     }
 
     public void UpdateLevelText() {

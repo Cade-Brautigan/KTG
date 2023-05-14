@@ -10,9 +10,6 @@ public class DebugConsole : MonoBehaviour
     {
         //DontDestroyOnLoad(this.gameObject);
         consoleUI = GetComponent<TextMeshProUGUI>();
-        if (consoleUI != null) {
-            Debug.Log("assigned");
-        }
     }
 
     // Called after Start
@@ -30,8 +27,6 @@ public class DebugConsole : MonoBehaviour
     {
         if (consoleUI != null) {
             consoleUI.text += "\n" + logString;
-        } else {
-            Debug.Log("its null. the message was: " + logString);
         }
     }
 }
