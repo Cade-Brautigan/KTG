@@ -8,7 +8,8 @@ using Newtonsoft.Json.Linq;
 
 public class PlayerUI : NetworkBehaviour
 {
-    [SyncVar] string playerName = "Cade";
+    #region Data
+    [SyncVar(hook = nameof(OnNameChanged))] string playerName = "Cade";
     [SyncVar] float offset = 0.5f;
 
     RectTransform playerUI;
@@ -18,7 +19,9 @@ public class PlayerUI : NetworkBehaviour
 
     PlayerLeveling leveling;
     PlayerHealth health;
+    #endregion
 
+    #region Start & Update
     void Awake() 
     {
         playerUI = transform.Find("PlayerUI").GetComponent<RectTransform>();
@@ -35,70 +38,56 @@ public class PlayerUI : NetworkBehaviour
         playerUI.position = playerUI.parent.position + Vector3.up * offset;
         playerUI.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
 
-        if (isLocalPlayer)
-        {
-            CmdUpdateNameText();
-            CmdUpdateLevelText();
-        }
+        UpdateNameText();
+        UpdateLevelText();
     }
 
     void Update()
     {
         if (!isLocalPlayer) return;
+
         playerUI.position = playerUI.parent.position + Vector3.up * offset;
         playerUI.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
     }
+    #endregion
 
-    [Command]
-    public void CmdUpdateNameText()
+    #region Callbacks
+    private void OnNameChanged(string oldValue, string newValue)
+    {
+        UpdateNameText();
+    }
+    #endregion
+
+    #region UI Updates
+    public void UpdateNameText()
     {
         nameUI.text = playerName;
-        RpcUpdateNameText();
     }
 
-    [ClientRpc]
-    public void RpcUpdateNameText()
-    {
-        if (isLocalPlayer) return;
-        nameUI.text = playerName;
-    }
-
-    [Command]
-    public void CmdUpdateLevelText()
+    public void UpdateLevelText()
     {
         if (leveling != null)
         {
             levelUI.text = leveling.Level.ToString();
-            RpcUpdateLevelText();
+
         }
     }
 
-    [ClientRpc]
-    public void RpcUpdateLevelText()
-    {
-        if (isLocalPlayer) return;
-        if (leveling != null)
-        { 
-            levelUI.text = leveling.Level.ToString();
-        }
-    }
-
-    [Command]
-    public void CmdUpdateHealthbar()
+    public void UpdateHealthbar()
     {
         if (health != null)
-        { 
+        {
             healthbar.fillAmount = (float)(health.Health) / (float)(health.MaxHealth);
         }
     }
 
-    [Command]
-    public void CmdUpdateOffset()
+    public void UpdateOffset()
     {
         if (leveling != null)
         {
             offset = 0.5f + (0.1f * (leveling.Level - 1));
         }
     }
+    #endregion
 
 }

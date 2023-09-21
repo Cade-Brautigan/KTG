@@ -6,8 +6,25 @@ using Newtonsoft.Json.Linq;
 
 public class PlayerMovement : NetworkBehaviour
 {
+    /* TODO:
+     * Bullet impact should not move player
+     * Orb pickup not working for client
+     *      When client picks up an orb CmdGainXp is called without authority
+     * 
+     * DONE:
+     * Client can not see host's firepoint
+     * Client can not spawn bullets
+     * Need to destroy player's gameobject on disconnect
+     * Pickups need to be spawned on the server
+     * Bullet collision not working
+     * Orb collision not working
+     * Orbs spawning but not showing up
+     * Scale not syncing
+     * 
+    */
+    #region Data
     // Internal data
-    [SerializeField] [SyncVar] float moveSpeed;
+    [SerializeField][SyncVar] float moveSpeed;
     Vector2 movement = Vector2.zero; // Stores joystick values between Update and FixedUpdate
     Vector2 rotation = Vector2.zero; // ""
 
@@ -24,9 +41,9 @@ public class PlayerMovement : NetworkBehaviour
     // Sister components
     PlayerShooting shooting;
     PlayerLeveling leveling;
+    #endregion
 
-    //private List<Vector2> sentMoves = new List<Vector2>();
-
+    #region Start & Update
     void Awake()
     {
         // Reference components and gameobjects
@@ -55,7 +72,7 @@ public class PlayerMovement : NetworkBehaviour
     void Update()
     {
         if (!isLocalPlayer) return;
-
+        
         if (movementJoystick)
         {
             movement = movementJoystick.Direction;
@@ -65,16 +82,12 @@ public class PlayerMovement : NetworkBehaviour
         {
             rotation = shootingJoystick.Direction;
         }
+        
     }
 
     void FixedUpdate()
     {
         if (!isLocalPlayer) return;
-
-        //foreach (var move in sentMoves)
-        //{
-        //    playerBody.MovePosition(move);
-        //}
 
         if (movement != Vector2.zero)
         {
@@ -93,12 +106,17 @@ public class PlayerMovement : NetworkBehaviour
             shooting.CmdShoot();
         }
 
-        CmdConstrainToCircle();
+        ConstrainToCircle();
     }
+    #endregion
 
+    #region Position
+    // Client side prediction
     private void Move(Vector2 move)
     {
+        // We only want the own player's gameobject
         if (!isLocalPlayer) return;
+        
         transform.position += (Vector3)(move);
         CmdMove(move);
     }
@@ -106,30 +124,65 @@ public class PlayerMovement : NetworkBehaviour
     [Command]
     private void CmdMove(Vector2 move)
     {
+        // If player is host, don't apply movement twice
+        if (isLocalPlayer) return;
+
+        // TODO: Check if movement vector is valid
+
+        // NetworkTransform syncs position to clients when position changes
         transform.position += (Vector3)(move);
-        //RpcMove(move);
     }
 
-    //[ClientRpc]
-    //private void RpcMove(Vector2 move)
-    //{
-    //    if (isLocalPlayer) return;
-    //    playerBody.MovePosition(move);
-    //}
+    private void ConstrainToCircle()
+    {
+        if (!isLocalPlayer) return;
 
+        if (Vector2.Distance(transform.position, map.transform.position) > map.GetComponent<CircleCollider2D>().radius)
+        {
+            // Calculate the direction back to the center of the circle
+            Vector2 direction = map.transform.position - transform.position;
+            // Move the game object back to the edge of the circle
+            transform.position = (Vector2)map.transform.position - direction.normalized * map.GetComponent<CircleCollider2D>().radius;
+        }
+
+        CmdConstrainToCircle();
+    }
+
+    [Command]
+    void CmdConstrainToCircle()
+    {
+        if (isLocalPlayer) return;
+        
+        if (Vector2.Distance(transform.position, map.transform.position) > map.GetComponent<CircleCollider2D>().radius)
+        {
+            // Calculate the direction back to the center of the circle
+            Vector2 direction = map.transform.position - transform.position;
+            // Move the game object back to the edge of the circle
+            transform.position = (Vector2)map.transform.position - direction.normalized * map.GetComponent<CircleCollider2D>().radius;
+        }
+        
+    }
+    #endregion
+
+    #region Rotation
     private void Rotate(float radians, Vector3 relativePos)
     {
         if (!isLocalPlayer) return;
+        
         firepoint.position = relativePos + transform.position;
         firepoint.eulerAngles = new Vector3(0f, 0f, radians * Mathf.Rad2Deg);
+
         CmdRotate(radians, relativePos);
     }
 
     [Command]
     private void CmdRotate(float radians, Vector3 relativePos)
     {
-        firepoint.position = relativePos + transform.position;
-        firepoint.eulerAngles = new Vector3(0f, 0f, radians * Mathf.Rad2Deg);
+        if (!isLocalPlayer)
+        {
+            firepoint.position = relativePos + transform.position;
+            firepoint.eulerAngles = new Vector3(0f, 0f, radians * Mathf.Rad2Deg);
+        }
         RpcRotate(radians, relativePos);
     }
 
@@ -137,39 +190,22 @@ public class PlayerMovement : NetworkBehaviour
     private void RpcRotate(float radians, Vector3 relativePos)
     {
         if (isLocalPlayer) return;
+
         firepoint.position = relativePos + transform.position;
         firepoint.eulerAngles = new Vector3(0f, 0f, radians * Mathf.Rad2Deg);
     }
+    #endregion
 
+    #region OnLevelUp
     [Command]
     public void CmdUpdateScale()
     {
         if (leveling != null)
         {
-            transform.localScale = new Vector3(0.5f, 0.5f, 0f) + (new Vector3(0.1f, 0.1f, 0f) * (leveling.Level - 1));
-            RpcUpdateScale();
-        }
-    }
-
-    [ClientRpc]
-    void RpcUpdateScale()
-    {
-        if (isLocalPlayer) return;
-        if (leveling != null)
-        { 
+            // NetworkTransform syncs scale to clients
             transform.localScale = new Vector3(0.5f, 0.5f, 0f) + (new Vector3(0.1f, 0.1f, 0f) * (leveling.Level - 1));
         }
-    }
-
-    [Command]
-    void CmdConstrainToCircle()
-    {
-        if (Vector2.Distance(transform.position, map.transform.position) > map.GetComponent<CircleCollider2D>().radius) {
-            // Calculate the direction back to the center of the circle
-            Vector2 direction = map.transform.position - transform.position;
-            // Move the game object back to the edge of the circle
-            transform.position = (Vector2)map.transform.position - direction.normalized * map.GetComponent<CircleCollider2D>().radius;
-        }
+        
     }
 
     [Command]
@@ -180,5 +216,6 @@ public class PlayerMovement : NetworkBehaviour
             moveSpeed = 5f - (0.25f * (leveling.Level - 1));
         }
     }
+    #endregion
            
 }

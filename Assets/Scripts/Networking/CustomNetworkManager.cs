@@ -24,4 +24,13 @@ public class CustomNetworkManager : NetworkManager
         NetworkServer.AddPlayerForConnection(conn, player); // Associate the GameObject with a network connection
     }
 
+    public override void OnServerDisconnect(NetworkConnectionToClient conn)
+    {
+        // If the connection has an associated player object, destroy it
+        if (conn.identity != null)
+        {
+            NetworkServer.Destroy(conn.identity.gameObject);
+        }
+    }
+
 }

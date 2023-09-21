@@ -2,9 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
+using UnityEngine.Networking.Types;
 
 public class PlayerLeveling : NetworkBehaviour
 {
+    #region Data
     /*
     Under the philosophy that:
     Objects can only GET certain values from other objects.
@@ -22,15 +24,19 @@ public class PlayerLeveling : NetworkBehaviour
     PlayerShooting shooting;
     PlayerMovement movement;
     PlayerUI UI;
+    #endregion
 
-    void Awake()
+    #region Start & Update
+    private void Awake()
     {
         health = transform.GetComponent<PlayerHealth>();
         shooting = transform.GetComponent<PlayerShooting>();
         movement = transform.GetComponent<PlayerMovement>();
         UI = transform.GetComponent<PlayerUI>();
     }
+    #endregion
 
+    #region Level System
     [Command]
     public void CmdGainXP(int amt)
     {
@@ -39,54 +45,89 @@ public class PlayerLeveling : NetworkBehaviour
     }
 
     [Server]
-    IEnumerator LevelUp()
+    private IEnumerator LevelUp()
     {
-        if (isLevelingUp) {yield break;}
+        if (isLevelingUp) { yield break; }
         isLevelingUp = true;
         while (xp >= level)
         {
             xp -= level;
             level += 1;
+            movement.CmdUpdateMoveSpeed();
+            movement.CmdUpdateScale();
+            shooting.CmdUpdateFireRate();
+            health.CmdUpdateMaxHealth();
             health.CmdHealFull();
             yield return new WaitForSeconds(levelUpTime);
         }
         isLevelingUp = false;
     }
+    #endregion
 
-    void OnLevelChanged(int oldValue, int newValue)
+    #region Callbacks
+    private void OnLevelChanged(int oldValue, int newValue)
+    {
+        UI.UpdateHealthbar();
+        UI.UpdateOffset();
+    }
+    #endregion
+
+    #region Collisions
+    private void OnCollisionEnter2D(Collision2D other)
     {
         if (!isLocalPlayer) return;
-        health.CmdUpdateMaxHealth();
-        movement.CmdUpdateMoveSpeed();
-        movement.CmdUpdateScale();
-        shooting.CmdUpdateFireRate();
-        UI.CmdUpdateHealthbar();
-        UI.CmdUpdateOffset();
+
+        uint networkid = other.gameObject.GetComponent<NetworkIdentity>().netId;
+        if (other.gameObject.CompareTag("1XP Orb"))
+        {
+            CmdSmallXpOrbPickup(networkid);
+        }
+
+        if (other.gameObject.CompareTag("5XP Orb"))
+        {
+            CmdMediumXpOrbPickup(networkid);
+        }
+
+        if (other.gameObject.CompareTag("10XP Orb"))
+        {
+            CmdLargeXpOrbPickup(networkid);
+        }
     }
 
-    void OnCollisionEnter2D(Collision2D other) {
-        /*
-        XP_Orb orb = other.gameObject.GetComponent<XP_Orb>();
-        if (orb != null) {
-            int xpValue = orb.GetXPValue();
-            Destroy(other.gameObject);
-            CmdGainXP(xpValue);
-        }
-        */
-        if (other.gameObject.CompareTag("1XP Orb")) {
-            Destroy(other.gameObject);
+    [Command]
+    private void CmdSmallXpOrbPickup(uint networkid)
+    {
+        GameObject orb = NetworkServer.spawned[networkid].gameObject;
+        if (orb != null)
+        {
+            // TODO: Check if this is a valid pickup
+            NetworkServer.Destroy(orb);
             CmdGainXP(1);
         }
+    }
 
-        if (other.gameObject.CompareTag("5XP Orb")) {
-            Destroy(other.gameObject);
+    [Command]
+    private void CmdMediumXpOrbPickup(uint networkid)
+    {
+        GameObject orb = NetworkServer.spawned[networkid].gameObject;
+        if (orb != null)
+        {
+            // TODO: Check if this is a valid pickup
+            NetworkServer.Destroy(orb);
             CmdGainXP(5);
         }
+    }
 
-        if (other.gameObject.CompareTag("10XP Orb")) {
-            Destroy(other.gameObject);
+    [Command]
+    private void CmdLargeXpOrbPickup(uint networkid)
+    {
+        GameObject orb = NetworkServer.spawned[networkid].gameObject;
+        if (orb != null)
+        {
+            // TODO: Check if this is a valid pickup
+            NetworkServer.Destroy(orb);
             CmdGainXP(10);
         }
-
     }
+    #endregion
 }

@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 33855153}
   - component: {fileID: 33855152}
   - component: {fileID: 33855154}
+  - component: {fileID: 33855155}
   m_Layer: 0
   m_Name: SpawnArea
   m_TagString: Untagged
@@ -169,6 +170,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abe7462b4ab366048a534ee317a43ae2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   spawnObjects:
   - prefab: {fileID: 822432267559444707, guid: 61c21c7ed722c3c4da4b788de1eb1734, type: 3}
     initCount: 0
@@ -308,6 +312,23 @@ LineRenderer:
     generateLightingData: 0
   m_UseWorldSpace: 1
   m_Loop: 0
+--- !u!114 &33855155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 33855150}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneId: 1266234184
+  _assetId: 0
+  serverOnly: 0
+  visible: 0
+  hasSpawned: 0
 --- !u!1 &100792064
 GameObject:
   m_ObjectHideFlags: 0
@@ -117197,7 +117218,11 @@ MonoBehaviour:
   playerPrefab: {fileID: 6282399234608731584, guid: 7cc3f689ad1ff1b46af782d97a8214bb, type: 3}
   autoCreatePlayer: 1
   playerSpawnMethod: 0
-  spawnPrefabs: []
+  spawnPrefabs:
+  - {fileID: 3093296516251179324, guid: f310184648ec6c84c8ea5fcb1827c9b4, type: 3}
+  - {fileID: 822432267559444707, guid: 61c21c7ed722c3c4da4b788de1eb1734, type: 3}
+  - {fileID: 3803722540974708863, guid: 9792c414be74e914390847b1d428dcb3, type: 3}
+  - {fileID: 6841421276392281409, guid: ab1a437c70c362747bcee16be8a3492b, type: 3}
   snapshotSettings:
     bufferTimeMultiplier: 2
     catchupNegativeThreshold: -1
@@ -117208,7 +117233,7 @@ MonoBehaviour:
     dynamicAdjustment: 1
     dynamicAdjustmentTolerance: 1
     deliveryTimeEmaDuration: 2
-  timeInterpolationGui: 0
+  timeInterpolationGui: 1
   spawnPoint: {fileID: 810085504}
 --- !u!4 &1342803667
 Transform:

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using Mirror;
+using UnityEngine.Networking.Types;
 
 public class PlayerHealth : NetworkBehaviour
 {
+    #region Data
     [SyncVar(hook = nameof(OnHealthChanged))] int health;
     [SyncVar] int maxHealth;
 
@@ -15,7 +17,9 @@ public class PlayerHealth : NetworkBehaviour
     GameObject lastHitBy;
     PlayerUI UI;
     PlayerLeveling leveling;
+    #endregion
 
+    #region Start & Update
     void Awake()
     {
         UI = transform.GetComponent<PlayerUI>();
@@ -25,16 +29,20 @@ public class PlayerHealth : NetworkBehaviour
     void Start()
     {
         if (!isLocalPlayer) return;
+
         CmdUpdateMaxHealth();
         CmdHealFull();
     }
+    #endregion
 
+    #region Callbacks
     public void OnHealthChanged(int oldValue, int newValue)
     {
-        if (!isLocalPlayer) return;
-        UI.CmdUpdateHealthbar();
+        UI.UpdateHealthbar();
     }
+    #endregion
 
+    #region Health System
     [Command]
     public void CmdUpdateMaxHealth()
     {
@@ -50,8 +58,8 @@ public class PlayerHealth : NetworkBehaviour
         health = maxHealth;
     }
 
-    [Command]
-    public void CmdTakeDamage(int damage)
+    [Server]
+    public void TakeDamage(int damage)
     {
         health -= damage;
         if (health <= 0)
@@ -61,7 +69,7 @@ public class PlayerHealth : NetworkBehaviour
     }
 
     [Server]
-    void Die()
+    private void Die()
     {
         PlayerShooting[] players = FindObjectsOfType<PlayerShooting>();
         foreach (PlayerShooting shooter in players)
@@ -73,13 +81,31 @@ public class PlayerHealth : NetworkBehaviour
         }
         Destroy(transform.gameObject);
     }
+    #endregion
 
-    void OnCollisionEnter2D(Collision2D other)
+    #region Collisions
+    private void OnCollisionEnter2D(Collision2D other)
     {
+        if (!isLocalPlayer) return;
+
+        uint networkid = other.gameObject.GetComponent<NetworkIdentity>().netId;
         if (other.gameObject.tag == "Bullet")
-        { 
-            CmdTakeDamage(50);
+        {
+            CmdBulletCollision(networkid);
         }
     }
+
+    [Command]
+    private void CmdBulletCollision(uint networkid)
+    {
+        GameObject bullet = NetworkServer.spawned[networkid].gameObject;
+        if (bullet != null)
+        {
+            // TODO: Server-side hit validation (maybe put on bullet?)
+            NetworkServer.Destroy(bullet);
+            TakeDamage(50);
+        }
+    }
+    #endregion
 
 }
