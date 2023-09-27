@@ -4,6 +4,7 @@ using Mirror;
 public class CustomNetworkManager : NetworkManager
 {
     public Transform spawnPoint;
+    private int clientCount = 0;
 
     public override void Start()
     {
@@ -22,13 +23,26 @@ public class CustomNetworkManager : NetworkManager
     {
         GameObject player = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
         NetworkServer.AddPlayerForConnection(conn, player); // Associate the GameObject with a network connection
+
+        if (conn == NetworkServer.localConnection)
+        {
+            player.name = "Host";
+        }
+        else
+        {
+            clientCount++;
+            player.name = "Client " + clientCount;
+        }
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
-        // If the connection has an associated player object, destroy it
         if (conn.identity != null)
         {
+            if (conn != NetworkServer.localConnection)
+            {
+                clientCount--;
+            }
             NetworkServer.Destroy(conn.identity.gameObject);
         }
     }

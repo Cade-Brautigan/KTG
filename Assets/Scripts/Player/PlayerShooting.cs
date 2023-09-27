@@ -33,7 +33,7 @@ public class PlayerShooting : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
-        CmdUpdateFireRate();
+        CmdRequestUpdateFireRate();
     }
     #endregion
 
@@ -65,7 +65,13 @@ public class PlayerShooting : NetworkBehaviour
     }
 
     [Command]
-    public void CmdUpdateFireRate()
+    public void CmdRequestUpdateFireRate()
+    {
+        ServerUpdateFireRate();
+    }
+
+    [Server]
+    public void ServerUpdateFireRate()
     {
         if (leveling != null)
         {
@@ -80,7 +86,7 @@ public class PlayerShooting : NetworkBehaviour
 
     void KillReward(int otherPlayerLevel)
     {
-        leveling.CmdGainXP(otherPlayerLevel);
+        // leveling.CmdGainXP(otherPlayerLevel);
     }
     #endregion
 }

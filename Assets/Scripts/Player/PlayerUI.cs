@@ -69,7 +69,6 @@ public class PlayerUI : NetworkBehaviour
         if (leveling != null)
         {
             levelUI.text = leveling.Level.ToString();
-
         }
     }
 

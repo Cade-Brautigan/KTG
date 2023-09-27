@@ -8,7 +8,7 @@ using UnityEngine.Networking.Types;
 public class PlayerHealth : NetworkBehaviour
 {
     #region Data
-    [SyncVar(hook = nameof(OnHealthChanged))] int health;
+    [SerializeField] [SyncVar(hook = nameof(OnHealthChanged))] int health;
     [SyncVar] int maxHealth;
 
     public int Health => health;
@@ -30,8 +30,8 @@ public class PlayerHealth : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
-        CmdUpdateMaxHealth();
-        CmdHealFull();
+        CmdRequestUpdateMaxHealth();
+        CmdRequestHealFull();
     }
     #endregion
 
@@ -44,7 +44,13 @@ public class PlayerHealth : NetworkBehaviour
 
     #region Health System
     [Command]
-    public void CmdUpdateMaxHealth()
+    public void CmdRequestUpdateMaxHealth()
+    {
+        ServerUpdateMaxHealth();
+    }
+
+    [Server]
+    public void ServerUpdateMaxHealth()
     {
         if (leveling != null)
         {
@@ -53,23 +59,29 @@ public class PlayerHealth : NetworkBehaviour
     }
 
     [Command]
-    public void CmdHealFull()
+    public void CmdRequestHealFull() 
+    {
+        ServerHealFull();
+    }
+
+    [Server]
+    public void ServerHealFull()
     { 
         health = maxHealth;
     }
 
     [Server]
-    public void TakeDamage(int damage)
+    public void ServerTakeDamage(int damage)
     {
         health -= damage;
         if (health <= 0)
         {
-            Die();
+            ServerDie();
         }
     }
 
     [Server]
-    private void Die()
+    private void ServerDie()
     {
         PlayerShooting[] players = FindObjectsOfType<PlayerShooting>();
         foreach (PlayerShooting shooter in players)
@@ -84,26 +96,27 @@ public class PlayerHealth : NetworkBehaviour
     #endregion
 
     #region Collisions
-    private void OnCollisionEnter2D(Collision2D other)
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!isLocalPlayer) return;
+        if (!isServer) return;
 
-        uint networkid = other.gameObject.GetComponent<NetworkIdentity>().netId;
         if (other.gameObject.tag == "Bullet")
         {
-            CmdBulletCollision(networkid);
+            uint networkid = other.gameObject.GetComponent<NetworkIdentity>().netId;
+            ServerBulletCollision(networkid);
         }
     }
 
-    [Command]
-    private void CmdBulletCollision(uint networkid)
+
+    [Server]
+    private void ServerBulletCollision(uint networkid)
     {
         GameObject bullet = NetworkServer.spawned[networkid].gameObject;
         if (bullet != null)
         {
             // TODO: Server-side hit validation (maybe put on bullet?)
             NetworkServer.Destroy(bullet);
-            TakeDamage(50);
+            ServerTakeDamage(50);
         }
     }
     #endregion

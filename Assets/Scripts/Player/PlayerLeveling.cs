@@ -12,7 +12,7 @@ public class PlayerLeveling : NetworkBehaviour
     Objects can only GET certain values from other objects.
     Objects can only SET the internal values of other objects indirectly through functions.
     */
-    [SyncVar(hook = nameof(OnLevelChanged))] int level = 1;
+    [SerializeField] [SyncVar(hook = nameof(OnLevelChanged))] int level = 1;
     [SyncVar] int xp = 0;
     [SyncVar] float levelUpTime = 1f;
     [SyncVar] bool isLevelingUp = false;
@@ -37,8 +37,8 @@ public class PlayerLeveling : NetworkBehaviour
     #endregion
 
     #region Level System
-    [Command]
-    public void CmdGainXP(int amt)
+    [Server]
+    public void GainXP(int amt)
     {
         xp += amt;
         if (xp >= level) StartCoroutine(LevelUp());
@@ -53,11 +53,11 @@ public class PlayerLeveling : NetworkBehaviour
         {
             xp -= level;
             level += 1;
-            movement.CmdUpdateMoveSpeed();
-            movement.CmdUpdateScale();
-            shooting.CmdUpdateFireRate();
-            health.CmdUpdateMaxHealth();
-            health.CmdHealFull();
+            movement.ServerUpdateMoveSpeed();
+            movement.ServerUpdateScale();
+            shooting.ServerUpdateFireRate();
+            health.ServerUpdateMaxHealth();
+            health.ServerHealFull();
             yield return new WaitForSeconds(levelUpTime);
         }
         isLevelingUp = false;
@@ -67,17 +67,26 @@ public class PlayerLeveling : NetworkBehaviour
     #region Callbacks
     private void OnLevelChanged(int oldValue, int newValue)
     {
+        UI.UpdateLevelText();
         UI.UpdateHealthbar();
         UI.UpdateOffset();
     }
     #endregion
 
     #region Collisions
-    private void OnCollisionEnter2D(Collision2D other)
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!isLocalPlayer) return;
+        if (!isServer) return;
 
-        uint networkid = other.gameObject.GetComponent<NetworkIdentity>().netId;
+        NetworkIdentity networkIdentity = other.gameObject.GetComponent<NetworkIdentity>();
+        if (networkIdentity == null) return;
+        uint networkid = networkIdentity.netId;
+
+        if (other != null) 
+        {
+            networkid = other.gameObject.GetComponent<NetworkIdentity>().netId;
+        }
+        
         if (other.gameObject.CompareTag("1XP Orb"))
         {
             CmdSmallXpOrbPickup(networkid);
@@ -102,7 +111,7 @@ public class PlayerLeveling : NetworkBehaviour
         {
             // TODO: Check if this is a valid pickup
             NetworkServer.Destroy(orb);
-            CmdGainXP(1);
+            GainXP(1);
         }
     }
 
@@ -114,7 +123,7 @@ public class PlayerLeveling : NetworkBehaviour
         {
             // TODO: Check if this is a valid pickup
             NetworkServer.Destroy(orb);
-            CmdGainXP(5);
+            GainXP(5);
         }
     }
 
@@ -126,7 +135,7 @@ public class PlayerLeveling : NetworkBehaviour
         {
             // TODO: Check if this is a valid pickup
             NetworkServer.Destroy(orb);
-            CmdGainXP(10);
+            GainXP(10);
         }
     }
     #endregion

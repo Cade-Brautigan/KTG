@@ -65,8 +65,8 @@ public class PlayerMovement : NetworkBehaviour
         shootingJoystick = GameObject.Find("Canvas/RightJoystick").GetComponent<Joystick>();
 
         // Update Internal data
-        CmdUpdateMoveSpeed();
-        CmdUpdateScale();
+        CmdRequestUpdateMoveSpeed();
+        CmdRequestUpdateScale();
     }
 
     void Update()
@@ -198,7 +198,13 @@ public class PlayerMovement : NetworkBehaviour
 
     #region OnLevelUp
     [Command]
-    public void CmdUpdateScale()
+    public void CmdRequestUpdateScale() 
+    {
+        ServerUpdateScale();
+    }
+
+    [Server]
+    public void ServerUpdateScale()
     {
         if (leveling != null)
         {
@@ -209,7 +215,13 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     [Command]
-    public void CmdUpdateMoveSpeed()
+    public void CmdRequestUpdateMoveSpeed()
+    {
+        ServerUpdateMoveSpeed();
+    }
+
+    [Server]
+    public void ServerUpdateMoveSpeed()
     {
         if (leveling != null)
         {
