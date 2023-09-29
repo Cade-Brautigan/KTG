@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEditor.SearchService;
 using Mirror.Discovery;
 using UnityEngine.SceneManagement;
 
@@ -21,7 +20,6 @@ public class MainMenu : MonoBehaviour
     Button lanBackButton, lanHostButton;
     Transform lanScrollViewContent;
     [SerializeField] GameObject serverEntryPrefab; // Prefab for the server entry.
-    Transform tablePanel; // Parent container for the server entries.
 
     private void Awake() 
     {
@@ -44,19 +42,20 @@ public class MainMenu : MonoBehaviour
         lanHostButton.onClick.AddListener(LANHostButtonPressed);
     }
 
+    #region Main Menu
     private void QuickplayButtonPressed()
     {
-        Debug.Log("Quickplay button pressed");
     }
 
     private void LANButtonPressed()
     {
-        Debug.Log("LAN button pressed");
         mainMenu.SetActive(false);
         lanServerBrowser.SetActive(true);
         networkDiscovery.StartDiscovery();
     }
+    #endregion
 
+    #region LAN Server Browser
     private void LANBackButtonPressed()
     {
         lanServerBrowser.SetActive(false);
@@ -65,18 +64,29 @@ public class MainMenu : MonoBehaviour
 
     private void LANHostButtonPressed()
     {
-        //SceneManager.SetActiveScene("GameplayScene");
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.LoadScene("GameplayScene");
     }
 
-    private void OnServerFound(ServerResponse serverResponse)
+    private void OnServerFound(CustomServerResponse serverResponse)
     {
         GameObject newEntry = Instantiate(serverEntryPrefab, lanScrollViewContent);
-        ServerEntry serverEntryScript = newEntry.GetComponent<ServerEntry>();
-        
-        if (serverEntryScript != null)
+        ServerEntry serverEntry = newEntry.GetComponent<ServerEntry>();
+
+        if (serverEntry != null)
         {
-            serverEntryScript.Initialize(serverResponse);
+            serverEntry.Initialize(serverResponse);
         }
     }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "GameplayScene")
+        {
+            networkManager.StartHost();
+            SceneManager.sceneLoaded -= OnSceneLoaded; // Important to unsubscribe
+        }
+    }
+    #endregion
 
 }

@@ -13,7 +13,7 @@ public class ServerEntry : MonoBehaviour
     Button joinButton;
 
     private bool isServerInfoSet = false;
-    ServerResponse serverInfo;
+    CustomServerResponse serverInfo;
 
     CustomNetworkManager networkManager;
 
@@ -28,25 +28,24 @@ public class ServerEntry : MonoBehaviour
 
         joinButton = transform.GetComponent<Button>();
         joinButton.onClick.AddListener(ConnectToServer);
-
     }
 
-    public void Initialize(ServerResponse serverResponse)
+    public void Initialize(CustomServerResponse serverResponse)
     {
-        // Assuming serverResponse has custom attributes like numberOfPlayers and pingValue
-        // serverName.text = serverResponse.serverName; // set the server name
-        // gamemode.text = serverResponse.gameMode; // set the game mode
-        // players.text = serverResponse.numberOfPlayers.ToString() + "/Max"; // set the number of players
-        // ping.text = serverResponse.pingValue.ToString() + " ms"; // set the ping
+        serverInfo = serverResponse;
+        isServerInfoSet = true;
 
-
+        serverName.text = serverResponse.ServerName;
+        gamemode.text = serverResponse.GameMode;
+        players.text = serverResponse.NumPlayers.ToString() + "/Max";
+        ping.text = serverResponse.Ping.ToString() + " ms";
     }
 
     private void ConnectToServer()
     {
         if (isServerInfoSet) 
         {
-            networkManager.StartClient(serverInfo.uri);
+            networkManager.StartClient(serverInfo.ServerResponse.uri);
         }
     }
 }

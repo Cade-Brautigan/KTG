@@ -1,13 +1,16 @@
 using UnityEngine;
 using Mirror;
+using UnityEngine.SceneManagement;
 
 public class CustomNetworkManager : NetworkManager
 {
-    public Transform spawnPoint;
-    private int clientCount = 0;
+    GameObject spawnPoint;
+    int clientCount = 0;
 
     public override void Start()
     {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+
         string[] args = System.Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length; i++)
         {
@@ -21,7 +24,7 @@ public class CustomNetworkManager : NetworkManager
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        GameObject player = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+        GameObject player = Instantiate(playerPrefab, spawnPoint.transform.position, spawnPoint.transform.rotation);
         NetworkServer.AddPlayerForConnection(conn, player); // Associate the GameObject with a network connection
 
         if (conn == NetworkServer.localConnection)
@@ -45,6 +48,12 @@ public class CustomNetworkManager : NetworkManager
             }
             NetworkServer.Destroy(conn.identity.gameObject);
         }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        spawnPoint = Instantiate(new GameObject("SpawnPoint"));
+        spawnPoint.transform.position = Vector3.zero;
     }
 
 }
