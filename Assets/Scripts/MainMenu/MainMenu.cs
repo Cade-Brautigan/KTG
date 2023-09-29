@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 public class MainMenu : MonoBehaviour
 {
     CustomNetworkManager networkManager;
-    NetworkDiscovery networkDiscovery;
+    CustomNetworkDiscovery networkDiscovery;
 
     GameObject mainMenu;
     Button quickplayButton, lanButton;
@@ -24,8 +24,8 @@ public class MainMenu : MonoBehaviour
     private void Awake() 
     {
         networkManager = GameObject.Find("NetworkManager").GetComponent<CustomNetworkManager>();
-        networkDiscovery = GameObject.Find("NetworkManager").GetComponent<NetworkDiscovery>();
-        networkDiscovery.OnServerFound.AddListener(OnServerFound);
+        networkDiscovery = GameObject.Find("NetworkManager").GetComponent<CustomNetworkDiscovery>();
+        networkDiscovery.OnServerFoundEvent += OnServerFound;
 
         mainMenu = transform.Find("MainMenu").gameObject;
         quickplayButton = mainMenu.transform.Find("QuickplayButton").GetComponent<Button>();
@@ -51,7 +51,7 @@ public class MainMenu : MonoBehaviour
     {
         mainMenu.SetActive(false);
         lanServerBrowser.SetActive(true);
-        networkDiscovery.StartDiscovery();
+        networkDiscovery.SearchForServers();
     }
     #endregion
 
@@ -60,6 +60,7 @@ public class MainMenu : MonoBehaviour
     {
         lanServerBrowser.SetActive(false);
         mainMenu.SetActive(true);
+        networkDiscovery.StopSearchForServers();
     }
 
     private void LANHostButtonPressed()
@@ -68,14 +69,14 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene("GameplayScene");
     }
 
-    private void OnServerFound(CustomServerResponse serverResponse)
+    private void OnServerFound(DiscoveryResponse serverData)
     {
         GameObject newEntry = Instantiate(serverEntryPrefab, lanScrollViewContent);
         ServerEntry serverEntry = newEntry.GetComponent<ServerEntry>();
 
         if (serverEntry != null)
         {
-            serverEntry.Initialize(serverResponse);
+            serverEntry.Initialize(serverData);
         }
     }
 

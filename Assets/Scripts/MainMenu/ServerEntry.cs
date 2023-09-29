@@ -2,22 +2,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using Microsoft.Unity.VisualStudio.Editor;
-using Mirror.Discovery;
 using UnityEngine.UI;
 
 public class ServerEntry : MonoBehaviour
 {
+    CustomNetworkManager networkManager;
+
     TextMeshProUGUI  serverName, gamemode, players, ping;
     UnityEngine.UI.Image thumbnail;
     Button joinButton;
 
-    private bool isServerInfoSet = false;
-    CustomServerResponse serverInfo;
+    DiscoveryResponse serverData;
+    bool isServerDataSet = false;
 
-    CustomNetworkManager networkManager;
-
-    private void Awake() 
+    private void Awake()
     {
         serverName = transform.Find("Name").GetComponent<TextMeshProUGUI>();
         gamemode = transform.Find("Gamemode").GetComponent<TextMeshProUGUI>();
@@ -30,22 +28,22 @@ public class ServerEntry : MonoBehaviour
         joinButton.onClick.AddListener(ConnectToServer);
     }
 
-    public void Initialize(CustomServerResponse serverResponse)
+    public void Initialize(DiscoveryResponse serverData)
     {
-        serverInfo = serverResponse;
-        isServerInfoSet = true;
+        this.serverData = serverData;
+        isServerDataSet = true;
 
-        serverName.text = serverResponse.ServerName;
-        gamemode.text = serverResponse.GameMode;
-        players.text = serverResponse.NumPlayers.ToString() + "/Max";
-        ping.text = serverResponse.Ping.ToString() + " ms";
+        serverName.text = serverData.serverName;
+        gamemode.text = serverData.gameMode;
+        players.text = serverData.numPlayers.ToString() + "/" + serverData.maxPlayers.ToString();
+        ping.text = serverData.ping.ToString() + " ms";
     }
 
     private void ConnectToServer()
     {
-        if (isServerInfoSet) 
+        if (isServerDataSet) 
         {
-            networkManager.StartClient(serverInfo.ServerResponse.uri);
+            //networkManager.StartClient(serverData.ip);
         }
     }
 }
