@@ -103,7 +103,7 @@ public class PlayerMovement : NetworkBehaviour
             Rotate(radians, relativePos);
 
             // Shoot
-            shooting.CmdShoot();
+            shooting.Shoot();
         }
 
         ConstrainToCircle();

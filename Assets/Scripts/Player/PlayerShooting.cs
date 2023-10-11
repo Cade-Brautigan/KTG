@@ -15,6 +15,8 @@ public class PlayerShooting : NetworkBehaviour
     Transform firepoint;
     GameObject lastPlayerHit;
     PlayerLeveling leveling;
+    [SerializeField] AudioClip gunshotSound;
+    AudioSource audioSource;
 
     public GameObject LastPlayerHit
     {
@@ -26,6 +28,7 @@ public class PlayerShooting : NetworkBehaviour
     void Awake()
     {
         firepoint = transform.Find("Firepoint").transform;
+        audioSource = GetComponent<AudioSource>();
         leveling = transform.GetComponent<PlayerLeveling>();
     }
 
@@ -38,29 +41,43 @@ public class PlayerShooting : NetworkBehaviour
     #endregion
 
     #region Shooting System
-    //public void Shoot()
-    //{
-    //    if (!isLocalPlayer) return;
+    public void Shoot()
+    {
+        if (!isLocalPlayer) return;
 
-
-    //}
+        if (Time.time > fireRate + lastShot)
+        {
+            if (gunshotSound != null) 
+            {
+                audioSource.PlayOneShot(gunshotSound);
+            }
+            CmdShoot();
+        }
+    }
 
     [Command]
     public void CmdShoot()
     {
-        //if (!isLocalPlayer) return;
-
         if (Time.time > fireRate + lastShot)
         {
             GameObject bullet = Instantiate(bulletPrefab, firepoint.position, firepoint.rotation);
             bullet.GetComponent<BulletController>().shooter = this;
             Rigidbody2D bulletBody = bullet.GetComponent<Rigidbody2D>();
             bulletBody.velocity = firepoint.right * bulletForce;
-
-            // Spawn the bullet for all the clients
-            NetworkServer.Spawn(bullet);
-
+            NetworkServer.Spawn(bullet); // Spawn the bullet for all the clients
             lastShot = Time.time;
+            RpcShoot();
+        }
+    }
+
+    [ClientRpc]
+    public void RpcShoot()
+    {
+        if (isLocalPlayer) return;
+
+        if (gunshotSound != null)
+        {
+            audioSource.PlayOneShot(gunshotSound);
         }
     }
 

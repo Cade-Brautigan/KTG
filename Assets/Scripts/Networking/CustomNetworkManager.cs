@@ -1,15 +1,19 @@
 using UnityEngine;
 using Mirror;
 using UnityEngine.SceneManagement;
+using Mirror.Discovery;
 
 public class CustomNetworkManager : NetworkManager
 {
     GameObject spawnPoint;
+    CustomNetworkDiscovery networkDiscovery;
     int clientCount = 0;
+    bool hosting;
 
     public override void Start()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        networkDiscovery = transform.GetComponent<CustomNetworkDiscovery>();
 
         string[] args = System.Environment.GetCommandLineArgs();
         for (int i = 0; i < args.Length; i++)
@@ -52,8 +56,33 @@ public class CustomNetworkManager : NetworkManager
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        spawnPoint = Instantiate(new GameObject("SpawnPoint"));
-        spawnPoint.transform.position = Vector3.zero;
+        if (scene.name == "GameplayScene")
+        {
+            spawnPoint = Instantiate(new GameObject("SpawnPoint"));
+            spawnPoint.transform.position = Vector3.zero;
+            if (hosting) 
+            {
+                StartHost();
+                networkDiscovery.AdvertiseServer();
+            } 
+            else 
+            {
+                StartClient();
+            }
+        }
+    }
+
+    public void StartLANHost()
+    {
+        hosting = true;
+        SceneManager.LoadScene("GameplayScene");
+    }
+
+    public void ConnectToLANServer(string ip)
+    {
+        hosting = false;
+        networkAddress = ip;
+        SceneManager.LoadScene("GameplayScene");
     }
 
 }

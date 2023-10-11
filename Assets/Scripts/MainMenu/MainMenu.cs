@@ -19,7 +19,7 @@ public class MainMenu : MonoBehaviour
     GameObject lanServerBrowser;
     Button lanBackButton, lanHostButton;
     Transform lanScrollViewContent;
-    [SerializeField] GameObject serverEntryPrefab; // Prefab for the server entry.
+    [SerializeField] GameObject serverEntryPrefab;
 
     private void Awake() 
     {
@@ -65,12 +65,13 @@ public class MainMenu : MonoBehaviour
 
     private void LANHostButtonPressed()
     {
-        SceneManager.sceneLoaded += OnSceneLoaded;
-        SceneManager.LoadScene("GameplayScene");
+        networkManager.StartLANHost();
+        networkDiscovery.StopSearchForServers();
     }
 
     private void OnServerFound(DiscoveryResponse serverData)
     {
+        Debug.Log("Server Found!");
         GameObject newEntry = Instantiate(serverEntryPrefab, lanScrollViewContent);
         ServerEntry serverEntry = newEntry.GetComponent<ServerEntry>();
 
@@ -80,14 +81,14 @@ public class MainMenu : MonoBehaviour
         }
     }
 
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    public void ClearServerEntries()
     {
-        if (scene.name == "GameplayScene")
+        foreach (Transform child in lanScrollViewContent)
         {
-            networkManager.StartHost();
-            SceneManager.sceneLoaded -= OnSceneLoaded; // Important to unsubscribe
+            Destroy(child.gameObject);
         }
     }
+
     #endregion
 
 }

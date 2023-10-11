@@ -17,15 +17,17 @@ public class ServerEntry : MonoBehaviour
 
     private void Awake()
     {
+        networkManager = GameObject.Find("NetworkManager").GetComponent<CustomNetworkManager>();
+
         serverName = transform.Find("Name").GetComponent<TextMeshProUGUI>();
         gamemode = transform.Find("Gamemode").GetComponent<TextMeshProUGUI>();
         players = transform.Find("Players").GetComponent<TextMeshProUGUI>();
         ping = transform.Find("Ping").GetComponent<TextMeshProUGUI>();
 
-        thumbnail = transform.Find("Thumbail").GetComponent<UnityEngine.UI.Image>();
+        thumbnail = transform.Find("Thumbnail").GetComponent<UnityEngine.UI.Image>();
 
         joinButton = transform.GetComponent<Button>();
-        joinButton.onClick.AddListener(ConnectToServer);
+        joinButton.onClick.AddListener(() => networkManager.ConnectToLANServer(serverData.ip));
     }
 
     public void Initialize(DiscoveryResponse serverData)
@@ -39,11 +41,4 @@ public class ServerEntry : MonoBehaviour
         ping.text = serverData.ping.ToString() + " ms";
     }
 
-    private void ConnectToServer()
-    {
-        if (isServerDataSet) 
-        {
-            //networkManager.StartClient(serverData.ip);
-        }
-    }
 }

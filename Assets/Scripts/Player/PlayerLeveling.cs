@@ -24,11 +24,16 @@ public class PlayerLeveling : NetworkBehaviour
     PlayerShooting shooting;
     PlayerMovement movement;
     PlayerUI UI;
+
+    [SerializeField] AudioClip xpGainSound;
+    AudioSource audioSource;
     #endregion
 
     #region Start & Update
     private void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
+
         health = transform.GetComponent<PlayerHealth>();
         shooting = transform.GetComponent<PlayerShooting>();
         movement = transform.GetComponent<PlayerMovement>();
@@ -41,7 +46,17 @@ public class PlayerLeveling : NetworkBehaviour
     public void GainXP(int amt)
     {
         xp += amt;
+        RpcGainXP();
         if (xp >= level) StartCoroutine(LevelUp());
+    }
+
+    [ClientRpc]
+    private void RpcGainXP()
+    {
+        if (xpGainSound != null)
+        {
+            audioSource.PlayOneShot(xpGainSound);
+        }
     }
 
     [Server]
@@ -89,22 +104,22 @@ public class PlayerLeveling : NetworkBehaviour
         
         if (other.gameObject.CompareTag("1XP Orb"))
         {
-            CmdSmallXpOrbPickup(networkid);
+            ServerSmallXpOrbPickup(networkid);
         }
 
         if (other.gameObject.CompareTag("5XP Orb"))
         {
-            CmdMediumXpOrbPickup(networkid);
+            ServerMediumXpOrbPickup(networkid);
         }
 
         if (other.gameObject.CompareTag("10XP Orb"))
         {
-            CmdLargeXpOrbPickup(networkid);
+            ServerLargeXpOrbPickup(networkid);
         }
     }
 
-    [Command]
-    private void CmdSmallXpOrbPickup(uint networkid)
+    [Server]
+    private void ServerSmallXpOrbPickup(uint networkid)
     {
         GameObject orb = NetworkServer.spawned[networkid].gameObject;
         if (orb != null)
@@ -115,8 +130,8 @@ public class PlayerLeveling : NetworkBehaviour
         }
     }
 
-    [Command]
-    private void CmdMediumXpOrbPickup(uint networkid)
+    [Server]
+    private void ServerMediumXpOrbPickup(uint networkid)
     {
         GameObject orb = NetworkServer.spawned[networkid].gameObject;
         if (orb != null)
@@ -127,8 +142,8 @@ public class PlayerLeveling : NetworkBehaviour
         }
     }
 
-    [Command]
-    private void CmdLargeXpOrbPickup(uint networkid)
+    [Server]
+    private void ServerLargeXpOrbPickup(uint networkid)
     {
         GameObject orb = NetworkServer.spawned[networkid].gameObject;
         if (orb != null)

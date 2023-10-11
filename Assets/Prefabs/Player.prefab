@@ -629,6 +629,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+  health: 0
 --- !u!114 &8203468725733657932
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -644,6 +645,8 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+  level: 1
+  xpGainSound: {fileID: 8300000, guid: 215f4cc3ace84664aa74279bd2d62792, type: 3}
 --- !u!114 &7484087847203197444
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -676,6 +679,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   bulletPrefab: {fileID: 3093296516251179324, guid: f310184648ec6c84c8ea5fcb1827c9b4, type: 3}
+  gunshotSound: {fileID: 8300000, guid: 39e73e0ab1654b74a97abf5da93ddbec, type: 3}
 --- !u!114 &4075647365107289422
 MonoBehaviour:
   m_ObjectHideFlags: 0

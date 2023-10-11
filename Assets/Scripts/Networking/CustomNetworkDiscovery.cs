@@ -5,10 +5,43 @@ using Mirror.Discovery;
 using Mirror;
 using System.Net;
 using System;
+using UnityEngine.SceneManagement;
+
+public struct DiscoveryRequest : NetworkMessage
+{
+    // Add public fields (not properties) for whatever information you want
+    // sent by clients in their broadcast messages that servers will use.
+}
+
+public struct DiscoveryResponse : NetworkMessage
+{
+    public string serverName;
+    public string gameMode;
+    public string mapName;
+    public int numPlayers;
+    public int maxPlayers;
+    public string ip;
+    public int ping;
+}
 
 public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, DiscoveryResponse>
 {
     public event Action<DiscoveryResponse> OnServerFoundEvent;
+    MainMenu mainMenu;
+
+    private void Awake()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "MainMenu")
+        {
+            mainMenu = GameObject.Find("MainMenuCanvas").GetComponent<MainMenu>();
+            Debug.Log("Main menu assigned");
+        }
+    }
 
     #region Server
     /// <summary>
@@ -41,7 +74,7 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
         Debug.Log("ProcessRequest called");
         return new DiscoveryResponse
         {
-            serverName = "Your Custom Server Name",
+            serverName = "Custom Server Name",
             gameMode = "Kill To Grow",
             mapName = "Expanse",
             numPlayers = NetworkServer.connections.Count,
@@ -61,6 +94,11 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
     /// <returns>An instance of ServerRequest with data to be broadcasted</returns>
     protected override DiscoveryRequest GetRequest()
     {
+        if (mainMenu != null) 
+        {
+            mainMenu.ClearServerEntries();
+            Debug.Log("server entries cleared");
+        }
         Debug.Log("GetRequest called");
         return new DiscoveryRequest();
     }
@@ -83,7 +121,7 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
     public void SearchForServers() 
     {
         base.StartDiscovery();
-        Debug.Log("Discovery started");
+        Debug.Log("Searching for servers");
     }
 
     public void StopSearchForServers()
@@ -92,5 +130,4 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
         Debug.Log("Discovery stopped");
     }
     #endregion
-
 }

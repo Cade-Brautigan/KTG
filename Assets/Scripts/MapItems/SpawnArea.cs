@@ -11,23 +11,24 @@ public class SpawnArea : NetworkBehaviour
     // FIX CLASS TO FULLY REFLECT OOP PRINCIPLES
 
     float radius = 30f;
-
-    [SerializeField] List<SpawnObject> spawnObjects = new List<SpawnObject>(); // represents all SpawnObject types
+    [SerializeField] List<SpawnObject> spawnObjects = new List<SpawnObject>(); // All SpawnObject types
 
     [System.Serializable]
-    public class SpawnObject {
+    public class SpawnObject 
+    {
         public GameObject prefab;
         public int initCount; // The count that should be spawned on game load
         public int count; // Current number of its type spawned
         public int maxCount; // Maximum number of its type spawned
-        public float respawnTime; // Time it takes for object.count++
-        public float despawnTime; // Lifetime of each object. despawnTime = 0 means object does not despawn
+        public float respawnTime; // Time it takes for count++
+        public float despawnTime; // Lifetime of each object; despawnTime = 0 means object does not despawn
         public bool isRespawning = false;
     }
 
-    [Server]
     private void Start()
     {
+        if (!isServer) return;
+
         // Spawn the initial count of each item
         foreach (SpawnObject obj in spawnObjects)
         {
@@ -38,9 +39,10 @@ public class SpawnArea : NetworkBehaviour
         }
     }
 
-    [Server]
     private void FixedUpdate()
     {
+        if (!isServer) return;
+        
         // Begin respawn if necessary
         foreach (SpawnObject obj in spawnObjects)
         {
