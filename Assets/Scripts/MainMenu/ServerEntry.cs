@@ -14,7 +14,6 @@ public class ServerEntry : MonoBehaviour
     Button joinButton;
 
     DiscoveryResponse serverData;
-    IPEndPoint endpoint;
     bool isServerDataSet = false;
 
     private void Awake()
@@ -28,16 +27,15 @@ public class ServerEntry : MonoBehaviour
         thumbnail = transform.Find("Thumbnail").GetComponent<UnityEngine.UI.Image>();
 
         joinButton = transform.GetComponent<Button>();
-        joinButton.onClick.AddListener(() => networkManager.ConnectToLANServer(serverData.ip));
+        joinButton.onClick.AddListener(() => networkManager.ConnectToLANServer(serverData));
     }
 
-    public void Initialize(DiscoveryResponse serverData, IPEndPoint endpoint)
+    public void Initialize(DiscoveryResponse serverData)
     {
         this.serverData = serverData;
-        this.endpoint = endpoint;
         isServerDataSet = true;
 
-        serverName.text = endpoint.Address + ":" + endpoint.Port; //serverData.serverName;
+        serverName.text = serverData.ip + ":" + serverData.port;
         gamemode.text = serverData.gameMode;
         players.text = serverData.numPlayers.ToString() + "/" + serverData.maxPlayers.ToString();
         ping.text = serverData.ping.ToString() + " ms";

@@ -76,11 +76,11 @@ public class CustomNetworkManager : NetworkManager
         SceneManager.LoadScene("GameplayScene");
     }
 
-    public void ConnectToLANServer(string ip)
+    public void ConnectToLANServer(DiscoveryResponse serverData)
     {
         networkDiscovery.StopSearchForServers();
         hosting = false;
-        networkAddress = ip;
+        networkAddress = serverData.ip;
         SceneManager.LoadScene("GameplayScene");
     }
 

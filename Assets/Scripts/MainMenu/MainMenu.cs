@@ -85,7 +85,7 @@ public class MainMenu : MonoBehaviour
     }
 
     // When the networkDiscovery finds a server
-    private void OnServerFound(DiscoveryResponse serverData, IPEndPoint endpoint)
+    private void OnServerFound(DiscoveryResponse serverData)
     {
         Debug.Log("Server Found!");
         GameObject newEntry = Instantiate(serverEntryPrefab, lanScrollViewContent);
@@ -93,7 +93,7 @@ public class MainMenu : MonoBehaviour
 
         if (serverEntry != null)
         {
-            serverEntry.Initialize(serverData, endpoint);
+            serverEntry.Initialize(serverData);
         }
     }
 

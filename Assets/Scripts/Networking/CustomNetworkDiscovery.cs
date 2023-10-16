@@ -21,13 +21,13 @@ public struct DiscoveryResponse : NetworkMessage
     public int numPlayers;
     public int maxPlayers;
     public string ip;
-    public string port;
+    public int port;
     public int ping;
 }
 
 public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, DiscoveryResponse>
 {
-    public event Action<DiscoveryResponse, IPEndPoint> OnServerFoundEvent;
+    public event Action<DiscoveryResponse> OnServerFoundEvent;
     MainMenu mainMenu;
 
     private void Awake()
@@ -81,7 +81,7 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
             numPlayers = NetworkServer.connections.Count,
             maxPlayers = 16,
             ip = endpoint.Address.ToString(),
-            port = endpoint.Port.ToString(),
+            port = 7777,
         };
     }
     #endregion
@@ -103,7 +103,7 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
     protected override void ProcessResponse(DiscoveryResponse response, IPEndPoint endpoint) 
     {
         Debug.Log("ProcessResponse called");
-        OnServerFoundEvent?.Invoke(response, endpoint);
+        OnServerFoundEvent?.Invoke(response);
     }
 
     public void StartSearchForServers() 
