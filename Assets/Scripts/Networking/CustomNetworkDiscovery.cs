@@ -94,7 +94,7 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
     /// <returns>An instance of ServerRequest with data to be broadcasted</returns>
     protected override DiscoveryRequest GetRequest()
     {
-        if (mainMenu != null) 
+        if (mainMenu != null)
         {
             mainMenu.ClearServerEntries();
             Debug.Log("server entries cleared");

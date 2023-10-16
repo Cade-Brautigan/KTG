@@ -28,9 +28,9 @@ public class CustomNetworkManager : NetworkManager
 
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
+        Debug.Log("OnServerAddPlayer called");
         GameObject player = Instantiate(playerPrefab, spawnPoint.transform.position, spawnPoint.transform.rotation);
         NetworkServer.AddPlayerForConnection(conn, player); // Associate the GameObject with a network connection
-        PlayerUI playerUI = player.GetComponent<PlayerUI>();
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
