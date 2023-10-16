@@ -9,19 +9,19 @@ public class PlayerShooting : NetworkBehaviour
     #region Data
     [SyncVar] float bulletForce = 10f;
     [SyncVar] float fireRate = 0.5f;
-    [SyncVar] float lastShot = 0f;
+    [SyncVar] bool canShoot = true;
+    float lastShot = 0f;
 
     [SerializeField] GameObject bulletPrefab;
     Transform firepoint;
     GameObject lastPlayerHit;
-    PlayerLeveling leveling;
-    [SerializeField] AudioClip gunshotSound;
-    AudioSource audioSource;
+    PlayerHealth lastPlayerHitHealth;
 
-    public GameObject LastPlayerHit
-    {
-        get { return lastPlayerHit; }
-    }
+    AudioSource audioSource;
+    [SerializeField] AudioClip gunshotSound;
+    
+    PlayerLeveling leveling;
+    PlayerHealth health;
     #endregion
 
     #region Start & Update
@@ -38,6 +38,13 @@ public class PlayerShooting : NetworkBehaviour
 
         CmdRequestUpdateFireRate();
     }
+
+    void Update() 
+    {
+        if (!isServer) return;
+
+        CheckLastHitPlayer();
+    }
     #endregion
 
     #region Shooting System
@@ -45,12 +52,18 @@ public class PlayerShooting : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
-        if (Time.time > fireRate + lastShot)
+        if ((Time.time > fireRate + lastShot) && canShoot)
         {
             if (gunshotSound != null) 
             {
                 audioSource.PlayOneShot(gunshotSound);
             }
+
+            if (!isServer)
+            {
+                lastShot = Time.time; // Do host lastShot update in Cmd
+            }
+            
             CmdShoot();
         }
     }
@@ -58,7 +71,7 @@ public class PlayerShooting : NetworkBehaviour
     [Command]
     public void CmdShoot()
     {
-        if (Time.time > fireRate + lastShot)
+        if ((Time.time > fireRate + lastShot) && canShoot)
         {
             GameObject bullet = Instantiate(bulletPrefab, firepoint.position, firepoint.rotation);
             bullet.GetComponent<BulletController>().shooter = this;
@@ -66,19 +79,21 @@ public class PlayerShooting : NetworkBehaviour
             bulletBody.velocity = firepoint.right * bulletForce;
             NetworkServer.Spawn(bullet); // Spawn the bullet for all the clients
             lastShot = Time.time;
-            RpcShoot();
         }
     }
 
-    [ClientRpc]
-    public void RpcShoot()
+    [Server]
+    public void ServerDisableShooting()
     {
-        if (isLocalPlayer) return;
+        firepoint.GetComponent<SpriteRenderer>().enabled = false;
+        canShoot = false;
+    }
 
-        if (gunshotSound != null)
-        {
-            audioSource.PlayOneShot(gunshotSound);
-        }
+    [Server]
+    public void ServerEnableShooting()
+    {
+        firepoint.GetComponent<SpriteRenderer>().enabled = true;
+        canShoot = true;
     }
 
     [Command]
@@ -96,14 +111,24 @@ public class PlayerShooting : NetworkBehaviour
         }
     }
 
-    public void OnPlayerHit(GameObject other)
+    [Server]
+    public void ServerOnPlayerHit(GameObject other)
     {
         lastPlayerHit = other;
+        lastPlayerHitHealth = other.GetComponent<PlayerHealth>();
     }
 
-    void KillReward(int otherPlayerLevel)
+    [Server]
+    void CheckLastHitPlayer()
     {
-        // leveling.CmdGainXP(otherPlayerLevel);
+        if (lastPlayerHitHealth != null && lastPlayerHitHealth.Health <= 0)
+        {
+            int lastPlayerHitLevel = lastPlayerHit.GetComponent<PlayerLeveling>().Level;
+            leveling.ServerGainXP(lastPlayerHitLevel);
+
+            lastPlayerHit = null;
+            lastPlayerHitHealth = null;
+        }
     }
     #endregion
 }

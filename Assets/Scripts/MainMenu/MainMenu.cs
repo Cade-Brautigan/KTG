@@ -14,7 +14,6 @@ public class MainMenu : MonoBehaviour
     GameObject mainMenu;
     Button quickplayButton, lanButton;
     TMP_InputField nicknameInput;
-    string defaultName = "Player";
 
     GameObject lanServerBrowser;
     Button lanBackButton, lanHostButton;
@@ -32,6 +31,9 @@ public class MainMenu : MonoBehaviour
         lanButton = mainMenu.transform.Find("LANButton").GetComponent<Button>();
         nicknameInput = mainMenu.transform.Find("NicknameInput").GetComponent<TMP_InputField>();
         quickplayButton.onClick.AddListener(QuickplayButtonPressed);
+        nicknameInput.text = PlayerPrefs.GetString("PlayerName", "Player");
+        nicknameInput.onDeselect.AddListener(ChangeNameTo);
+        nicknameInput.onSubmit.AddListener(ChangeNameTo);
         lanButton.onClick.AddListener(LANButtonPressed);
 
         lanServerBrowser = transform.Find("LANServerBrowser").gameObject;
@@ -52,6 +54,19 @@ public class MainMenu : MonoBehaviour
         mainMenu.SetActive(false);
         lanServerBrowser.SetActive(true);
         networkDiscovery.SearchForServers();
+    }
+
+    private void ChangeNameTo(string name) 
+    {
+        if (name.Length != 0 && name.Length < 20)
+        {
+            Debug.Log("Player name changed to " + name);
+            PlayerPrefs.SetString("PlayerName", name);
+        }
+        else
+        {
+            nicknameInput.text = PlayerPrefs.GetString("PlayerName", "Player");
+        }
     }
     #endregion
 

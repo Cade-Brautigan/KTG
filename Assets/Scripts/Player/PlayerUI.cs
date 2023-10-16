@@ -9,13 +9,17 @@ using Newtonsoft.Json.Linq;
 public class PlayerUI : NetworkBehaviour
 {
     #region Data
-    [SyncVar(hook = nameof(OnNameChanged))] string playerName = "Cade";
     [SyncVar] float offset = 0.5f;
+    [SyncVar(hook = nameof(OnNameChanged))] string playerName;
+
+    public string PlayerName => playerName;
 
     RectTransform playerUI;
     TextMeshPro nameUI;
     TextMeshPro levelUI;
     Image healthbar;
+
+    CustomNetworkManager networkManager;
 
     PlayerLeveling leveling;
     PlayerHealth health;
@@ -31,6 +35,8 @@ public class PlayerUI : NetworkBehaviour
 
         leveling = transform.GetComponent<PlayerLeveling>();
         health = transform.GetComponent<PlayerHealth>();
+
+        networkManager = GameObject.Find("NetworkManager").GetComponent<CustomNetworkManager>();
     }
 
     void Start()  
@@ -38,8 +44,13 @@ public class PlayerUI : NetworkBehaviour
         playerUI.position = playerUI.parent.position + Vector3.up * offset;
         playerUI.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
 
-        UpdateNameText();
         UpdateLevelText();
+
+        if (isLocalPlayer)
+        {
+            string name = PlayerPrefs.GetString("PlayerName", "Player");
+            CmdChangeNameTo(name);
+        }
     }
 
     void Update()
@@ -51,17 +62,25 @@ public class PlayerUI : NetworkBehaviour
     }
     #endregion
 
-    #region Callbacks
+    #region UI Updates
+    [Command]
+    private void CmdChangeNameTo(string name)
+    {
+        playerName = name;
+    }
+
     private void OnNameChanged(string oldValue, string newValue)
     {
-        UpdateNameText();
-    }
-    #endregion
+        nameUI.text = newValue;
 
-    #region UI Updates
-    public void UpdateNameText()
-    {
-        nameUI.text = playerName;
+        if (isServer)
+        {
+            gameObject.name = "Host (" + newValue + ")";
+        }
+        else
+        {
+            gameObject.name = "Client (" + newValue + ")";
+        }
     }
 
     public void UpdateLevelText()
@@ -86,6 +105,20 @@ public class PlayerUI : NetworkBehaviour
         {
             offset = 0.5f + (0.1f * (leveling.Level - 1));
         }
+    }
+
+    public void DisableUI()
+    {
+        nameUI.enabled = false;
+        levelUI.enabled = false;
+        healthbar.enabled = false;
+    }
+
+    public void EnableUI()
+    {
+        nameUI.enabled = true;
+        levelUI.enabled = true;
+        healthbar.enabled = true;
     }
     #endregion
 

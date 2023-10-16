@@ -15,8 +15,11 @@ public class PlayerHealth : NetworkBehaviour
     public int MaxHealth => maxHealth;
 
     GameObject lastHitBy;
+
     PlayerUI UI;
     PlayerLeveling leveling;
+    PlayerMovement movement;
+    PlayerShooting shooting;
     #endregion
 
     #region Start & Update
@@ -24,6 +27,8 @@ public class PlayerHealth : NetworkBehaviour
     {
         UI = transform.GetComponent<PlayerUI>();
         leveling = transform.GetComponent<PlayerLeveling>();
+        movement = transform.GetComponent<PlayerMovement>();
+        shooting = transform.GetComponent<PlayerShooting>();
     }
 
     void Start()
@@ -79,45 +84,50 @@ public class PlayerHealth : NetworkBehaviour
             ServerDie();
         }
     }
+    #endregion
 
+    #region Death & Respawn
     [Server]
     private void ServerDie()
     {
-        PlayerShooting[] players = FindObjectsOfType<PlayerShooting>();
-        foreach (PlayerShooting shooter in players)
-        {
-            if (shooter.LastPlayerHit == gameObject)
-            { 
-                shooter.SendMessage("KillReward", leveling.Level, SendMessageOptions.DontRequireReceiver);
-            }
-        }
-        Destroy(transform.gameObject);
-    }
-    #endregion
+        movement.ServerDisableMovement();
+        shooting.ServerDisableShooting();
+        RpcDie();
 
-    #region Collisions
-    private void OnTriggerEnter2D(Collider2D other)
+        StartCoroutine(ServerRespawn());
+    }
+
+    [ClientRpc]
+    private void RpcDie()
     {
-        if (!isServer) return;
-
-        if (other.gameObject.tag == "Bullet")
-        {
-            uint networkid = other.gameObject.GetComponent<NetworkIdentity>().netId;
-            ServerBulletCollision(networkid);
-        }
+        UI.DisableUI();
+        GetComponent<SpriteRenderer>().enabled = false;
+        GetComponent<Collider2D>().enabled = false;
     }
-
 
     [Server]
-    private void ServerBulletCollision(uint networkid)
+    private IEnumerator ServerRespawn()
     {
-        GameObject bullet = NetworkServer.spawned[networkid].gameObject;
-        if (bullet != null)
-        {
-            // TODO: Server-side hit validation (maybe put on bullet?)
-            NetworkServer.Destroy(bullet);
-            ServerTakeDamage(50);
-        }
+        yield return new WaitForSeconds(3f);
+
+        leveling.ServerResetLevel();
+        ServerHealFull();
+
+        GameObject spawnPoint = GameObject.Find("SpawnPoint");
+        transform.position = spawnPoint.transform.position;
+
+        movement.ServerEnableMovement();
+        shooting.ServerEnableShooting();
+
+        RpcRespawn();
+    }
+
+    [ClientRpc]
+    private void RpcRespawn()
+    {
+        UI.EnableUI();
+        GetComponent<SpriteRenderer>().enabled = true;
+        GetComponent<Collider2D>().enabled = true;
     }
     #endregion
 

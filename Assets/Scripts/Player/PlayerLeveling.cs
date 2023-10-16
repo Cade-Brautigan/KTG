@@ -9,12 +9,11 @@ public class PlayerLeveling : NetworkBehaviour
     #region Data
     /*
     Under the philosophy that:
-    Objects can only GET certain values from other objects.
+    Objects can only GET certain values from other objects through getter functions.
     Objects can only SET the internal values of other objects indirectly through functions.
     */
     [SerializeField] [SyncVar(hook = nameof(OnLevelChanged))] int level = 1;
     [SyncVar] int xp = 0;
-    [SyncVar] float levelUpTime = 1f;
     [SyncVar] bool isLevelingUp = false;
 
     public int Level => level;
@@ -25,8 +24,9 @@ public class PlayerLeveling : NetworkBehaviour
     PlayerMovement movement;
     PlayerUI UI;
 
-    [SerializeField] AudioClip xpGainSound;
     AudioSource audioSource;
+    [SerializeField] AudioClip xpGainSound;
+    [SerializeField] AudioClip levelUpSound;
     #endregion
 
     #region Start & Update
@@ -43,11 +43,11 @@ public class PlayerLeveling : NetworkBehaviour
 
     #region Level System
     [Server]
-    public void GainXP(int amt)
+    public void ServerGainXP(int amt)
     {
         xp += amt;
         RpcGainXP();
-        if (xp >= level) StartCoroutine(LevelUp());
+        if (xp >= level) StartCoroutine(ServerLevelUp());
     }
 
     [ClientRpc]
@@ -60,7 +60,7 @@ public class PlayerLeveling : NetworkBehaviour
     }
 
     [Server]
-    private IEnumerator LevelUp()
+    private IEnumerator ServerLevelUp()
     {
         if (isLevelingUp) { yield break; }
         isLevelingUp = true;
@@ -68,14 +68,38 @@ public class PlayerLeveling : NetworkBehaviour
         {
             xp -= level;
             level += 1;
-            movement.ServerUpdateMoveSpeed();
-            movement.ServerUpdateScale();
-            shooting.ServerUpdateFireRate();
-            health.ServerUpdateMaxHealth();
+            ServerUpdateStats();
             health.ServerHealFull();
-            yield return new WaitForSeconds(levelUpTime);
+            RpcLevelUp();
+            yield return new WaitForSeconds(1f);
         }
         isLevelingUp = false;
+    }
+
+    [ClientRpc]
+    private void RpcLevelUp()
+    {
+        if (levelUpSound)
+        {
+            audioSource.PlayOneShot(levelUpSound);
+        }
+    }
+
+    [Server]
+    public void ServerResetLevel()
+    {
+        level = 1;
+        xp = 0;
+        ServerUpdateStats();
+    }
+
+    [Server]
+    private void ServerUpdateStats()
+    {
+        movement.ServerUpdateMoveSpeed();
+        movement.ServerUpdateScale();
+        shooting.ServerUpdateFireRate();
+        health.ServerUpdateMaxHealth();
     }
     #endregion
 
@@ -126,7 +150,7 @@ public class PlayerLeveling : NetworkBehaviour
         {
             // TODO: Check if this is a valid pickup
             NetworkServer.Destroy(orb);
-            GainXP(1);
+            ServerGainXP(1);
         }
     }
 
@@ -138,7 +162,7 @@ public class PlayerLeveling : NetworkBehaviour
         {
             // TODO: Check if this is a valid pickup
             NetworkServer.Destroy(orb);
-            GainXP(5);
+            ServerGainXP(5);
         }
     }
 
@@ -150,7 +174,7 @@ public class PlayerLeveling : NetworkBehaviour
         {
             // TODO: Check if this is a valid pickup
             NetworkServer.Destroy(orb);
-            GainXP(10);
+            ServerGainXP(10);
         }
     }
     #endregion

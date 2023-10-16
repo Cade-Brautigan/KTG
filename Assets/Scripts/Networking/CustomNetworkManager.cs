@@ -7,8 +7,8 @@ public class CustomNetworkManager : NetworkManager
 {
     GameObject spawnPoint;
     CustomNetworkDiscovery networkDiscovery;
-    int clientCount = 0;
     bool hosting;
+
 
     public override void Start()
     {
@@ -30,26 +30,13 @@ public class CustomNetworkManager : NetworkManager
     {
         GameObject player = Instantiate(playerPrefab, spawnPoint.transform.position, spawnPoint.transform.rotation);
         NetworkServer.AddPlayerForConnection(conn, player); // Associate the GameObject with a network connection
-
-        if (conn == NetworkServer.localConnection)
-        {
-            player.name = "Host";
-        }
-        else
-        {
-            clientCount++;
-            player.name = "Client " + clientCount;
-        }
+        PlayerUI playerUI = player.GetComponent<PlayerUI>();
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
         if (conn.identity != null)
         {
-            if (conn != NetworkServer.localConnection)
-            {
-                clientCount--;
-            }
             NetworkServer.Destroy(conn.identity.gameObject);
         }
     }

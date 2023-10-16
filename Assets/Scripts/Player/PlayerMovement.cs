@@ -3,30 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 using Newtonsoft.Json.Linq;
+using System;
 
 public class PlayerMovement : NetworkBehaviour
 {
-    /* TODO:
-     * Bullet impact should not move player
-     * Orb pickup not working for client
-     *      When client picks up an orb CmdGainXp is called without authority
-     * 
-     * DONE:
-     * Client can not see host's firepoint
-     * Client can not spawn bullets
-     * Need to destroy player's gameobject on disconnect
-     * Pickups need to be spawned on the server
-     * Bullet collision not working
-     * Orb collision not working
-     * Orbs spawning but not showing up
-     * Scale not syncing
-     * 
-    */
     #region Data
     // Internal data
     [SerializeField][SyncVar] float moveSpeed;
     Vector2 movement = Vector2.zero; // Stores joystick values between Update and FixedUpdate
     Vector2 rotation = Vector2.zero; // ""
+    [SyncVar] bool canMove = true;
 
     // Joysticks
     Joystick movementJoystick;
@@ -117,8 +103,11 @@ public class PlayerMovement : NetworkBehaviour
         // We only want the own player's gameobject
         if (!isLocalPlayer) return;
         
-        transform.position += (Vector3)(move);
-        CmdMove(move);
+        if (canMove)
+        {
+            transform.position += (Vector3)(move);
+            CmdMove(move);
+        }
     }
 
     [Command]
@@ -130,7 +119,10 @@ public class PlayerMovement : NetworkBehaviour
         // TODO: Check if movement vector is valid
 
         // NetworkTransform syncs position to clients when position changes
-        transform.position += (Vector3)(move);
+        if (canMove)
+        {
+            transform.position += (Vector3)(move);
+        }
     }
 
     private void ConstrainToCircle()
@@ -161,6 +153,18 @@ public class PlayerMovement : NetworkBehaviour
             transform.position = (Vector2)map.transform.position - direction.normalized * map.GetComponent<CircleCollider2D>().radius;
         }
         
+    }
+
+    [Server]
+    public void ServerDisableMovement()
+    {
+        canMove = false;
+    }
+
+    [Server]
+    public void ServerEnableMovement()
+    {
+        canMove = true;
     }
     #endregion
 
