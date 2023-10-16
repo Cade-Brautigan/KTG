@@ -35,7 +35,7 @@ public class ServerEntry : MonoBehaviour
         this.serverData = serverData;
         isServerDataSet = true;
 
-        serverName.text = serverData.serverName;
+        serverName.text = serverData.ip + ":" + serverData.port; //serverData.serverName;
         gamemode.text = serverData.gameMode;
         players.text = serverData.numPlayers.ToString() + "/" + serverData.maxPlayers.ToString();
         ping.text = serverData.ping.ToString() + " ms";

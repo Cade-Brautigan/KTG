@@ -81,7 +81,6 @@ public class MainMenu : MonoBehaviour
     private void LANHostButtonPressed()
     {
         networkManager.StartLANHost();
-        networkDiscovery.StopSearchForServers();
     }
 
     private void OnServerFound(DiscoveryResponse serverData)

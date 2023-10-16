@@ -78,6 +78,7 @@ public class CustomNetworkManager : NetworkManager
 
     public void ConnectToLANServer(string ip)
     {
+        networkDiscovery.StopSearchForServers();
         hosting = false;
         networkAddress = ip;
         SceneManager.LoadScene("GameplayScene");

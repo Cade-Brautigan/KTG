@@ -21,6 +21,7 @@ public struct DiscoveryResponse : NetworkMessage
     public int numPlayers;
     public int maxPlayers;
     public string ip;
+    public string port;
     public int ping;
 }
 
@@ -79,7 +80,8 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
             mapName = "Expanse",
             numPlayers = NetworkServer.connections.Count,
             maxPlayers = 16,
-            ip = endpoint.Address.ToString()
+            ip = endpoint.Address.ToString(),
+            port = endpoint.Port.ToString(),
         };
     }
     #endregion
@@ -120,13 +122,13 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
 
     public void SearchForServers() 
     {
-        base.StartDiscovery();
+        StartDiscovery();
         Debug.Log("Searching for servers");
     }
 
     public void StopSearchForServers()
     {
-        base.StopDiscovery();
+        StopDiscovery();
         Debug.Log("Discovery stopped");
     }
     #endregion
