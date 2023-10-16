@@ -27,7 +27,7 @@ public struct DiscoveryResponse : NetworkMessage
 
 public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, DiscoveryResponse>
 {
-    public event Action<DiscoveryResponse> OnServerFoundEvent;
+    public event Action<DiscoveryResponse, IPEndPoint> OnServerFoundEvent;
     MainMenu mainMenu;
 
     private void Awake()
@@ -87,13 +87,7 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
     #endregion
 
     #region Client
-    /// <summary>
-    /// Create a message that will be broadcasted on the network to discover servers
-    /// </summary>
-    /// <remarks>
-    /// Override if you wish to include additional data in the discovery message
-    /// such as desired game mode, language, difficulty, etc... </remarks>
-    /// <returns>An instance of ServerRequest with data to be broadcasted</returns>
+    // Create a message that will be broadcasted on the network to discover servers
     protected override DiscoveryRequest GetRequest()
     {
         if (mainMenu != null)
@@ -105,22 +99,14 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
         return new DiscoveryRequest();
     }
 
-    /// <summary>
-    /// Process the answer from a server
-    /// </summary>
-    /// <remarks>
-    /// A client receives a reply from a server, this method processes the
-    /// reply and raises an event
-    /// </remarks>
-    /// <param name="response">Response that came from the server</param>
-    /// <param name="endpoint">Address of the server that replied</param>
+    // Process the answer from a server
     protected override void ProcessResponse(DiscoveryResponse response, IPEndPoint endpoint) 
     {
         Debug.Log("ProcessResponse called");
-        OnServerFoundEvent?.Invoke(response);
+        OnServerFoundEvent?.Invoke(response, endpoint);
     }
 
-    public void SearchForServers() 
+    public void StartSearchForServers() 
     {
         StartDiscovery();
         Debug.Log("Searching for servers");

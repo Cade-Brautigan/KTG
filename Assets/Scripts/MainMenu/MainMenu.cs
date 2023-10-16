@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using Mirror.Discovery;
 using UnityEngine.SceneManagement;
+using System.Net;
 
 public class MainMenu : MonoBehaviour
 {
@@ -53,7 +54,7 @@ public class MainMenu : MonoBehaviour
     {
         mainMenu.SetActive(false);
         lanServerBrowser.SetActive(true);
-        networkDiscovery.SearchForServers();
+        networkDiscovery.StartSearchForServers();
     }
 
     private void ChangeNameTo(string name) 
@@ -83,7 +84,8 @@ public class MainMenu : MonoBehaviour
         networkManager.StartLANHost();
     }
 
-    private void OnServerFound(DiscoveryResponse serverData)
+    // When the networkDiscovery finds a server
+    private void OnServerFound(DiscoveryResponse serverData, IPEndPoint endpoint)
     {
         Debug.Log("Server Found!");
         GameObject newEntry = Instantiate(serverEntryPrefab, lanScrollViewContent);
@@ -91,7 +93,7 @@ public class MainMenu : MonoBehaviour
 
         if (serverEntry != null)
         {
-            serverEntry.Initialize(serverData);
+            serverEntry.Initialize(serverData, endpoint);
         }
     }
 
