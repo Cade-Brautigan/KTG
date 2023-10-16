@@ -80,7 +80,7 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
             mapName = "Expanse",
             numPlayers = NetworkServer.connections.Count,
             maxPlayers = 16,
-            ip = endpoint.Address.ToString(),
+            ip = NetworkManager.singleton.networkAddress,
             port = 7777,
         };
     }
