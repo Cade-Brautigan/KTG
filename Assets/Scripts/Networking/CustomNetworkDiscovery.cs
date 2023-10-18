@@ -6,6 +6,9 @@ using Mirror;
 using System.Net;
 using System;
 using UnityEngine.SceneManagement;
+using System.Linq;
+using System.Net.Sockets;
+using Mono.Cecil.Cil;
 
 public struct DiscoveryRequest : NetworkMessage
 {
@@ -29,10 +32,12 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
 {
     public event Action<DiscoveryResponse> OnServerFoundEvent;
     MainMenu mainMenu;
+    CustomNetworkManager networkManager;
 
     private void Awake()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        networkManager = GetComponent<CustomNetworkManager>();
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -73,6 +78,20 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
     protected override DiscoveryResponse ProcessRequest(DiscoveryRequest request, IPEndPoint endpoint) 
     {
         Debug.Log("ProcessRequest called");
+
+        string localIP;
+        try
+        {
+            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+            localIP = host.AddressList.FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork)?.ToString();
+        }
+        catch
+        {
+            localIP = "127.0.0.1";  // default to localhost
+        }
+
+        Debug.Log("Local IP is " + localIP);
+
         return new DiscoveryResponse
         {
             serverName = "Custom Server Name",
@@ -80,7 +99,7 @@ public class CustomNetworkDiscovery : NetworkDiscoveryBase<DiscoveryRequest, Dis
             mapName = "Expanse",
             numPlayers = NetworkServer.connections.Count,
             maxPlayers = 16,
-            ip = NetworkManager.singleton.networkAddress,
+            ip = localIP,
             port = 7777,
         };
     }

@@ -28,18 +28,7 @@ public class CustomNetworkManager : NetworkManager
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
         Debug.Log("OnServerAddPlayer called");
-        
         GameObject player = Instantiate(playerPrefab, spawnPoint.transform.position, spawnPoint.transform.rotation);
-
-        if (player != null)
-        {
-            Debug.Log("Player object is not null");
-        }
-        else
-        {
-            Debug.Log("Player object is null");
-        }
-
         NetworkServer.AddPlayerForConnection(conn, player); // Associate the GameObject with a network connection
     }
 
@@ -59,6 +48,7 @@ public class CustomNetworkManager : NetworkManager
             spawnPoint.transform.position = Vector3.zero;
             if (hosting) 
             {
+                Debug.Log("Host starting");
                 StartHost();
                 networkDiscovery.AdvertiseServer();
             } 
