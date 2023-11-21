@@ -7,43 +7,71 @@ using Newtonsoft.Json.Linq;
 public class PlayerShooting : NetworkBehaviour
 {
     #region Data
+    // Internal Data
     [SyncVar] float bulletForce = 10f;
     [SyncVar] float fireRate = 0.5f;
     [SyncVar] bool canShoot = true;
     float lastShot = 0f;
-
-    [SerializeField] GameObject bulletPrefab;
-    Transform firepoint;
+    Joystick shootingJoystick;
+    Vector2 rotation = Vector2.zero; // Stores joystick values between Update and FixedUpdate
+    [SyncVar] Vector2 networkedRotation = Vector2.zero;
     GameObject lastPlayerHit;
     PlayerHealth lastPlayerHitHealth;
 
-    AudioSource audioSource;
-    [SerializeField] AudioClip gunshotSound;
+    public Vector2 Rotation => rotation;
+    public Vector2 NetworkedRotation => networkedRotation;
     
+    Transform firepoint;
+    [SyncVar] float firepointRadius = 0.5f; // TODO get firepoint radius directly from firepoint somehow
+
+    // Visual
+    [SerializeField] GameObject bulletPrefab;
+    
+    // Sister Components
     PlayerLeveling leveling;
-    PlayerHealth health;
+    PlayerAudio playerAudio;
     #endregion
 
     #region Start & Update
     void Awake()
     {
         firepoint = transform.Find("Firepoint").transform;
-        audioSource = GetComponent<AudioSource>();
+        
         leveling = transform.GetComponent<PlayerLeveling>();
+        playerAudio = transform.GetComponent<PlayerAudio>();
     }
 
     void Start()
     {
         if (!isLocalPlayer) return;
 
+        shootingJoystick = GameObject.Find("Canvas/RightJoystick").GetComponent<Joystick>();
+
         CmdRequestUpdateFireRate();
     }
 
     void Update() 
     {
-        if (!isServer) return;
+        if (shootingJoystick)
+        {
+            rotation = shootingJoystick.Direction;
+            CmdUpdateNetworkedRotation(rotation);
+        }
 
-        CheckLastHitPlayer();
+        if (isServer) 
+        {
+            CheckLastHitPlayer();
+        }
+    }
+
+    void FixedUpdate()
+    {
+        Rotate(rotation);
+
+        if (rotation != Vector2.zero)
+        {
+            Shoot();
+        }
     }
     #endregion
 
@@ -54,10 +82,7 @@ public class PlayerShooting : NetworkBehaviour
 
         if ((Time.time > fireRate + lastShot) && canShoot)
         {
-            if (gunshotSound != null) 
-            {
-                audioSource.PlayOneShot(gunshotSound);
-            }
+            playerAudio.PlayGunshotSound();
 
             if (!isServer)
             {
@@ -74,12 +99,21 @@ public class PlayerShooting : NetworkBehaviour
         if ((Time.time > fireRate + lastShot) && canShoot)
         {
             GameObject bullet = Instantiate(bulletPrefab, firepoint.position, firepoint.rotation);
-            bullet.GetComponent<BulletController>().shooter = this;
+            bullet.GetComponent<BulletController>().shooterGameObject = gameObject;
             Rigidbody2D bulletBody = bullet.GetComponent<Rigidbody2D>();
             bulletBody.velocity = firepoint.right * bulletForce;
             NetworkServer.Spawn(bullet); // Spawn the bullet for all the clients
             lastShot = Time.time;
+            RpcShoot();
         }
+    }
+
+    [ClientRpc]
+    private void RpcShoot() 
+    {
+        if (isLocalPlayer) return;
+
+        playerAudio.PlayGunshotSound();
     }
 
     [Server]
@@ -107,7 +141,15 @@ public class PlayerShooting : NetworkBehaviour
     {
         if (leveling != null)
         {
-            fireRate = 1f - (0.15f * (leveling.Level - 1));
+            if (leveling.Level < 20)
+            {
+                fireRate = 1f - (0.045f * (leveling.Level - 1));
+            }
+            else
+            {
+                fireRate = 0.1f;
+            }
+            
         }
     }
 
@@ -129,6 +171,76 @@ public class PlayerShooting : NetworkBehaviour
             lastPlayerHit = null;
             lastPlayerHitHealth = null;
         }
+    }
+    #endregion
+
+    #region Rotation
+    private void Rotate(Vector2 rotation)
+    {
+        if (!isLocalPlayer) return;
+        
+        float radians = Mathf.Atan2(rotation.y, rotation.x);
+        float degrees = radians * Mathf.Rad2Deg;
+
+        float xPos = Mathf.Cos(radians) * firepointRadius;
+        float yPos = Mathf.Sin(radians) * firepointRadius;
+
+        Vector3 relativePos = new Vector3(xPos, yPos, 0);
+
+        if (rotation != Vector2.zero)
+        {
+            firepoint.position = transform.position + relativePos;
+            firepoint.eulerAngles = new Vector3(0f, 0f, degrees);
+        }
+        CmdRotate(rotation);
+    }
+
+    [Command]
+    private void CmdRotate(Vector2 rotation)
+    {
+        if (!isLocalPlayer)
+        {
+            float radians = Mathf.Atan2(rotation.y, rotation.x);
+            float degrees = radians * Mathf.Rad2Deg;
+            
+            float xPos = Mathf.Cos(radians) * firepointRadius;
+            float yPos = Mathf.Sin(radians) * firepointRadius;
+
+            Vector3 relativePos = new Vector3(xPos, yPos, 0);
+
+            if (rotation != Vector2.zero)
+            {
+                firepoint.position = transform.position + relativePos;
+                firepoint.eulerAngles = new Vector3(0f, 0f, degrees);
+            }
+        }
+        RpcRotate(rotation);
+    }
+
+    [ClientRpc]
+    private void RpcRotate(Vector2 rotation)
+    {
+        if (isLocalPlayer) return;
+
+        float radians = Mathf.Atan2(rotation.y, rotation.x);
+        float degrees = radians * Mathf.Rad2Deg;
+        
+        float xPos = Mathf.Cos(radians) * firepointRadius;
+        float yPos = Mathf.Sin(radians) * firepointRadius;
+
+        Vector3 relativePos = new Vector3(xPos, yPos, 0);
+
+        if (rotation != Vector2.zero)
+        {
+            firepoint.position = transform.position + relativePos;
+            firepoint.eulerAngles = new Vector3(0f, 0f, degrees);
+        }
+    }
+
+    [Command]
+    private void CmdUpdateNetworkedRotation(Vector2 rotation)
+    {
+        networkedRotation = rotation;
     }
     #endregion
 }

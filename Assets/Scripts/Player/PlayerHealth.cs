@@ -14,6 +14,7 @@ public class PlayerHealth : NetworkBehaviour
     public int Health => health;
     public int MaxHealth => maxHealth;
 
+    SpawnArea spawnArea;
     GameObject lastHitBy;
 
     PlayerUI UI;
@@ -25,6 +26,7 @@ public class PlayerHealth : NetworkBehaviour
     #region Start & Update
     void Awake()
     {
+        spawnArea = GameObject.Find("Map/SpawnArea").GetComponent<SpawnArea>();
         UI = transform.GetComponent<PlayerUI>();
         leveling = transform.GetComponent<PlayerLeveling>();
         movement = transform.GetComponent<PlayerMovement>();
@@ -101,6 +103,7 @@ public class PlayerHealth : NetworkBehaviour
     private void RpcDie()
     {
         UI.DisableUI();
+        transform.Find("Firepoint").GetComponent<SpriteRenderer>().enabled = false;
         GetComponent<SpriteRenderer>().enabled = false;
         GetComponent<Collider2D>().enabled = false;
     }
@@ -113,19 +116,20 @@ public class PlayerHealth : NetworkBehaviour
         leveling.ServerResetLevel();
         ServerHealFull();
 
-        GameObject spawnPoint = GameObject.Find("SpawnPoint");
-        transform.position = spawnPoint.transform.position;
+        transform.position = spawnArea.RandomPointOnCircle();
 
         movement.ServerEnableMovement();
         shooting.ServerEnableShooting();
 
-        RpcRespawn();
+        RpcRespawn(transform.position);
     }
 
     [ClientRpc]
-    private void RpcRespawn()
+    private void RpcRespawn(Vector3 position)
     {
+        transform.position = position;
         UI.EnableUI();
+        transform.Find("Firepoint").GetComponent<SpriteRenderer>().enabled = true;
         GetComponent<SpriteRenderer>().enabled = true;
         GetComponent<Collider2D>().enabled = true;
     }

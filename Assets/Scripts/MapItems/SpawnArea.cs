@@ -88,7 +88,7 @@ public class SpawnArea : NetworkBehaviour
         NetworkServer.Destroy(obj);
     }
 
-    private Vector3 RandomPointOnCircle() 
+    public Vector3 RandomPointOnCircle() 
     {
         float angle = Random.Range(0f, Mathf.PI * 2); // Random angle in radians
         float randomRadius = Mathf.Sqrt(Random.Range(0f, 1f)) * radius;

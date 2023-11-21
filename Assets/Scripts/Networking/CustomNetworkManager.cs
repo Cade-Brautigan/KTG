@@ -7,7 +7,14 @@ public class CustomNetworkManager : NetworkManager
 {
     GameObject spawnPoint;
     CustomNetworkDiscovery networkDiscovery;
-    bool hosting;
+    ConnectionType connectionType;
+
+    public enum ConnectionType
+    {
+        HOST,
+        CLIENT,
+        SERVER
+    }
 
     public override void Start()
     {
@@ -19,8 +26,8 @@ public class CustomNetworkManager : NetworkManager
         {
             if (args[i] == "-launch-as-server")
             {
-                Debug.Log("Starting server");
-                StartServer();
+                connectionType = ConnectionType.SERVER;
+                SceneManager.LoadScene("GameplayScene");
             }
         }
     }
@@ -40,36 +47,46 @@ public class CustomNetworkManager : NetworkManager
         }
     }
 
+    public override void OnClientDisconnect()
+    {
+        SceneManager.LoadScene("MainMenu");
+    }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (scene.name == "GameplayScene")
         {
             spawnPoint = Instantiate(new GameObject("SpawnPoint"));
             spawnPoint.transform.position = Vector3.zero;
-            if (hosting) 
+            if (connectionType == ConnectionType.HOST) 
             {
                 Debug.Log("Host starting");
                 StartHost();
                 networkDiscovery.AdvertiseServer();
             } 
-            else 
+            else if (connectionType == ConnectionType.CLIENT)
             {
                 Debug.Log("Client starting");
                 StartClient(); // After this is called, OnServerAddPLayer is called on the server
+            }
+            else if (connectionType == ConnectionType.SERVER)
+            {
+                Debug.Log("Server Starting");
+                StartServer();
             }
         }
     }
 
     public void StartLANHost()
     {
-        hosting = true;
+        connectionType = ConnectionType.HOST;
         SceneManager.LoadScene("GameplayScene");
     }
 
     public void ConnectToLANServer(DiscoveryResponse serverData)
     {
         networkDiscovery.StopSearchForServers();
-        hosting = false;
+        connectionType = ConnectionType.CLIENT;
         networkAddress = serverData.ip;
         SceneManager.LoadScene("GameplayScene");
     }

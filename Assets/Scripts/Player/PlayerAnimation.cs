@@ -1,61 +1,80 @@
 using UnityEngine;
 using Mirror;
+using Mirror.Examples.AdditiveScenes;
+using UnityEngine.Assertions.Must;
 
 public class PlayerAnimation : NetworkBehaviour
 {
-    private Animator animator;
-    // Enum to represent the 8 movement directions
-    enum Direction { None, Right, UpRight, Up, UpLeft, Left, DownLeft, Down, DownRight };
-    Direction currentDirection = Direction.None;
+    Animator animator;
+
+    SpriteRenderer firepoint;
+
     PlayerMovement playerMovement;
+    PlayerShooting playerShooting;
 
     void Awake()
     {
         animator = GetComponent<Animator>();
+
+        firepoint = transform.Find("Firepoint").GetComponent<SpriteRenderer>();
+
         playerMovement = GetComponent<PlayerMovement>();
+        playerShooting = GetComponent<PlayerShooting>();
     }
 
     void Update()
     {
-        // Get the horizontal and vertical input values
-        //float radians = Mathf.Atan2(playerMovement.movement.y, playerMovement.movement.x);
-        //float degrees = radians * Mathf.Rad2Deg;
-        //Debug.Log(degrees);
-
-        // Determine the current movement direction based on the input values
-        /*
-        if (playerMovement.movement == null) {
-            currentDirection = Direction.None;
+        if (isLocalPlayer)
+        {
+            UpdateAnimation(playerMovement.Movement, playerShooting.Rotation);
         }
-        else if ((degrees >= 0 && degrees < 22.5) || (degrees <= 0 && degrees >= -22.5)) {
-            currentDirection = Direction.Right;
+        else
+        {
+            UpdateAnimation(playerMovement.NetworkedMovement, playerShooting.NetworkedRotation);
         }
-        else if (degrees >= 22.5 && degrees < 67.5) {
-            currentDirection = Direction.UpRight;
-        }
-        else if (degrees >= 67.5 && degrees < 112.5) {
-            currentDirection = Direction.Up;
-        }
-        else if (degrees >= 112.5 && degrees < 157.5) {
-            currentDirection = Direction.UpLeft;
-        }
-        else if ((degrees >= 157.5 && degrees <= 180) || (degrees >= -180 && degrees < -157.5)) {
-            currentDirection = Direction.Left;
-        }
-        else if (degrees >= -157.5 && degrees < -112.5) {
-            currentDirection = Direction.DownLeft;
-        }
-        else if (degrees >= -112.5 && degrees < -67.5) {
-            currentDirection = Direction.Down;
-        }
-        else if (degrees >= -67.5 && degrees < -22.5) {
-            currentDirection = Direction.DownRight;
-        }
-        */
-        //Debug.Log(currentDirection);
-
-        // Update the animator's "Direction" parameter based on the current movement direction
-        //animator.SetInteger("Direction", (int)currentDirection);
-        //animator.SetFloat("Speed", Mathf.Abs(playerMovement.movement.magnitude * playerMovement.moveSpeed));
     }
+
+    void UpdateAnimation(Vector2 movement, Vector2 rotation)
+    {
+        animator.SetFloat("MovementHorizontal", movement.x);
+        animator.SetFloat("MovementVertical", movement.y);
+
+        animator.SetFloat("RotationHorizontal", rotation.x);
+        animator.SetFloat("RotationVertical", rotation.y);
+
+        animator.SetBool("Moving", movement != Vector2.zero);
+        animator.SetBool("Shooting", rotation != Vector2.zero);
+
+        float radians = Mathf.Atan2(rotation.y, rotation.x);
+        float degrees = radians * Mathf.Rad2Deg;
+
+        if (/*(movement == Vector2.zero) &&*/ (rotation == Vector2.zero)) // Idle
+        {
+            firepoint.enabled = false;
+        }
+        else
+        {
+            firepoint.enabled = true;
+        }
+
+        if (degrees >= -90f && degrees <= 90f) // Right 180 degrees
+        {
+            firepoint.flipY = false;
+            
+        } 
+        else
+        {
+            firepoint.flipY = true;
+        }
+
+        if (degrees >= -157.5 && degrees <= -22.5) // When facing Southwest, South, or Southeast
+        {
+            firepoint.sortingOrder = 1;
+        }
+        else
+        {
+            firepoint.sortingOrder = -1;
+        }
+    }
+
 }

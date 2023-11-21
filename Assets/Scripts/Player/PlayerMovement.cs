@@ -8,33 +8,28 @@ using System;
 public class PlayerMovement : NetworkBehaviour
 {
     #region Data
-    // Internal data
+    // Internal Data
     [SerializeField][SyncVar] float moveSpeed;
-    Vector2 movement = Vector2.zero; // Stores joystick values between Update and FixedUpdate
-    Vector2 rotation = Vector2.zero; // ""
     [SyncVar] bool canMove = true;
-
-    // Joysticks
     Joystick movementJoystick;
-    Joystick shootingJoystick;
+    Vector2 movement = Vector2.zero; // Stores joystick values between Update and FixedUpdate
+    [SyncVar] Vector2 networkedMovement = Vector2.zero;
 
-    // Reference components and gameobjects
-    Rigidbody2D playerBody;
-    GameObject map; // TODO move to separate script
-    Transform firepoint;
-    [SyncVar] float firepointRadius = 1f; // TODO get firepoint radius directly from firepoint somehow
+    // Accessors
+    public Vector2 Movement => movement;
+    public Vector2 NetworkedMovement => networkedMovement;
 
-    // Sister components
+    // Sister Components
     PlayerShooting shooting;
     PlayerLeveling leveling;
+
+    GameObject map; // TODO move to separate script
     #endregion
 
     #region Start & Update
     void Awake()
     {
         // Reference components and gameobjects
-        playerBody = transform.GetComponent<Rigidbody2D>();
-        firepoint = transform.Find("Firepoint").GetComponent<Transform>();
         map = GameObject.Find("Map");
 
         // Sister components
@@ -46,11 +41,8 @@ public class PlayerMovement : NetworkBehaviour
     {
         if (!isLocalPlayer) return;
 
-        // Joysticks
         movementJoystick = GameObject.Find("Canvas/LeftJoystick").GetComponent<Joystick>();
-        shootingJoystick = GameObject.Find("Canvas/RightJoystick").GetComponent<Joystick>();
 
-        // Update Internal data
         CmdRequestUpdateMoveSpeed();
         CmdRequestUpdateScale();
     }
@@ -62,13 +54,8 @@ public class PlayerMovement : NetworkBehaviour
         if (movementJoystick)
         {
             movement = movementJoystick.Direction;
+            CmdUpdateNetworkedMovement(movement);
         }
-
-        if (shootingJoystick)
-        {
-            rotation = shootingJoystick.Direction;
-        }
-        
     }
 
     void FixedUpdate()
@@ -81,17 +68,6 @@ public class PlayerMovement : NetworkBehaviour
             Move(moveSpeed * Time.fixedDeltaTime * movement);
         }
 
-        if (rotation != Vector2.zero)
-        {
-            // Rotate
-            float radians = Mathf.Atan2(rotation.y, rotation.x);
-            Vector3 relativePos = new Vector3(Mathf.Cos(radians) * firepointRadius, Mathf.Sin(radians) * firepointRadius, 0);
-            Rotate(radians, relativePos);
-
-            // Shoot
-            shooting.Shoot();
-        }
-
         ConstrainToCircle();
     }
     #endregion
@@ -100,29 +76,45 @@ public class PlayerMovement : NetworkBehaviour
     // Client side prediction
     private void Move(Vector2 move)
     {
-        // We only want the own player's gameobject
         if (!isLocalPlayer) return;
         
         if (canMove)
         {
             transform.position += (Vector3)(move);
-            CmdMove(move);
+            CmdMove(transform.position);
         }
     }
 
     [Command]
-    private void CmdMove(Vector2 move)
+    private void CmdMove(Vector3 position)
     {
-        // If player is host, don't apply movement twice
-        if (isLocalPlayer) return;
+        // TODO: Check if position update is valid.
+        // If movement is not valid, RpcMove the player to last valid position
 
-        // TODO: Check if movement vector is valid
-
-        // NetworkTransform syncs position to clients when position changes
         if (canMove)
         {
-            transform.position += (Vector3)(move);
+            // If player is host, don't apply movement twice
+            if (!isLocalPlayer) 
+            {
+                transform.position = position;
+            }
+            RpcMove(position);
         }
+    }
+
+    // Use custom movement Rpc instead of Mirror's for more responsive movement
+    [ClientRpc]
+    private void RpcMove(Vector3 position)
+    {
+        if (isLocalPlayer) return;
+
+        transform.position = position;
+    }
+
+    [Command]
+    void CmdUpdateNetworkedMovement(Vector2 newMovement)
+    {
+        networkedMovement = newMovement;
     }
 
     private void ConstrainToCircle()
@@ -168,38 +160,6 @@ public class PlayerMovement : NetworkBehaviour
     }
     #endregion
 
-    #region Rotation
-    private void Rotate(float radians, Vector3 relativePos)
-    {
-        if (!isLocalPlayer) return;
-        
-        firepoint.position = relativePos + transform.position;
-        firepoint.eulerAngles = new Vector3(0f, 0f, radians * Mathf.Rad2Deg);
-
-        CmdRotate(radians, relativePos);
-    }
-
-    [Command]
-    private void CmdRotate(float radians, Vector3 relativePos)
-    {
-        if (!isLocalPlayer)
-        {
-            firepoint.position = relativePos + transform.position;
-            firepoint.eulerAngles = new Vector3(0f, 0f, radians * Mathf.Rad2Deg);
-        }
-        RpcRotate(radians, relativePos);
-    }
-
-    [ClientRpc]
-    private void RpcRotate(float radians, Vector3 relativePos)
-    {
-        if (isLocalPlayer) return;
-
-        firepoint.position = relativePos + transform.position;
-        firepoint.eulerAngles = new Vector3(0f, 0f, radians * Mathf.Rad2Deg);
-    }
-    #endregion
-
     #region OnLevelUp
     [Command]
     public void CmdRequestUpdateScale() 
@@ -213,7 +173,7 @@ public class PlayerMovement : NetworkBehaviour
         if (leveling != null)
         {
             // NetworkTransform syncs scale to clients
-            transform.localScale = new Vector3(0.5f, 0.5f, 0f) + (new Vector3(0.1f, 0.1f, 0f) * (leveling.Level - 1));
+            transform.localScale = new Vector3(0.5f, 0.5f, 0f) + (new Vector3(0.05f, 0.05f, 0f) * (leveling.Level - 1));
         }
         
     }
@@ -229,7 +189,15 @@ public class PlayerMovement : NetworkBehaviour
     {
         if (leveling != null)
         {
-            moveSpeed = 5f - (0.25f * (leveling.Level - 1));
+            if (leveling.Level < 20)
+            {
+                moveSpeed = 5f - (0.225f * (leveling.Level - 1));
+            }
+            else
+            {
+                moveSpeed = 0.5f;
+            }
+            
         }
     }
     #endregion

@@ -15,11 +15,10 @@ public class PlayerUI : NetworkBehaviour
     public string PlayerName => playerName;
 
     RectTransform playerUI;
+    RectTransform panel;
     TextMeshPro nameUI;
     TextMeshPro levelUI;
     Image healthbar;
-
-    CustomNetworkManager networkManager;
 
     PlayerLeveling leveling;
     PlayerHealth health;
@@ -29,20 +28,26 @@ public class PlayerUI : NetworkBehaviour
     void Awake() 
     {
         playerUI = transform.Find("PlayerUI").GetComponent<RectTransform>();
-        nameUI = playerUI.Find("Player Name").GetComponent<TextMeshPro>();
-        levelUI = playerUI.Find("Player Level").GetComponent<TextMeshPro>();
+        panel = playerUI.Find("Panel").GetComponent<RectTransform>();
+        nameUI = panel.Find("Player Name").GetComponent<TextMeshPro>();
+        levelUI = panel.Find("Player Level").GetComponent<TextMeshPro>();
         healthbar = playerUI.Find("Player Health").GetComponent<Image>();
 
         leveling = transform.GetComponent<PlayerLeveling>();
         health = transform.GetComponent<PlayerHealth>();
-
-        networkManager = GameObject.Find("NetworkManager").GetComponent<CustomNetworkManager>();
     }
 
     void Start()  
     {
         playerUI.position = playerUI.parent.position + Vector3.up * offset;
         playerUI.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+
+        Canvas canvas = playerUI.GetComponent<Canvas>();
+        if (canvas != null)
+        {
+            // Force UI to overlap other player sprites
+            canvas.sortingLayerName = "UI";
+        }
 
         UpdateLevelText();
 
@@ -72,15 +77,9 @@ public class PlayerUI : NetworkBehaviour
     private void OnNameChanged(string oldValue, string newValue)
     {
         nameUI.text = newValue;
-
-        if (isServer)
-        {
-            gameObject.name = "Host (" + newValue + ")";
-        }
-        else
-        {
-            gameObject.name = "Client (" + newValue + ")";
-        }
+        gameObject.name = "Player (" + newValue + ")";
+        // Force recaclulation of horizontal layout group spacing
+        LayoutRebuilder.ForceRebuildLayoutImmediate(panel);
     }
 
     public void UpdateLevelText()

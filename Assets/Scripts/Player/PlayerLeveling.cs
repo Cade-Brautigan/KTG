@@ -23,21 +23,17 @@ public class PlayerLeveling : NetworkBehaviour
     PlayerShooting shooting;
     PlayerMovement movement;
     PlayerUI UI;
-
-    AudioSource audioSource;
-    [SerializeField] AudioClip xpGainSound;
-    [SerializeField] AudioClip levelUpSound;
+    PlayerAudio playerAudio;
     #endregion
 
     #region Start & Update
     private void Awake()
     {
-        audioSource = GetComponent<AudioSource>();
-
         health = transform.GetComponent<PlayerHealth>();
         shooting = transform.GetComponent<PlayerShooting>();
         movement = transform.GetComponent<PlayerMovement>();
         UI = transform.GetComponent<PlayerUI>();
+        playerAudio = transform.GetComponent<PlayerAudio>();
     }
     #endregion
 
@@ -53,10 +49,7 @@ public class PlayerLeveling : NetworkBehaviour
     [ClientRpc]
     private void RpcGainXP()
     {
-        if (xpGainSound != null)
-        {
-            audioSource.PlayOneShot(xpGainSound);
-        }
+        playerAudio.PlayXpGainSound();
     }
 
     [Server]
@@ -79,10 +72,7 @@ public class PlayerLeveling : NetworkBehaviour
     [ClientRpc]
     private void RpcLevelUp()
     {
-        if (levelUpSound)
-        {
-            audioSource.PlayOneShot(levelUpSound);
-        }
+        playerAudio.PlayLevelUpSound();
     }
 
     [Server]
@@ -109,6 +99,7 @@ public class PlayerLeveling : NetworkBehaviour
         UI.UpdateLevelText();
         UI.UpdateHealthbar();
         UI.UpdateOffset();
+        playerAudio.UpdateAudio();
     }
     #endregion
 
